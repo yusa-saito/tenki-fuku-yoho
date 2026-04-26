@@ -293,14 +293,23 @@ async function searchCities(query) {
     const results = data.results || [];
     const box = document.getElementById('search-suggestions');
     if (!results.length) { box.style.display = 'none'; return; }
-    box.innerHTML = results.map(r => {
-      const sub = [r.admin1, r.country].filter(Boolean).join(', ');
-      const name = [r.name, r.country].filter(Boolean).join(', ');
-      return `<div class="suggestion-item" onmousedown="selectCity(${r.latitude}, ${r.longitude}, '${name.replace(/'/g,"\\'")}')">
-        <span class="suggestion-name">${r.name}</span>
-        <span class="suggestion-sub">${sub}</span>
-      </div>`;
-    }).join('');
+    box.innerHTML = '';
+    results.forEach(r => {
+      const sub  = [r.admin1, r.country].filter(Boolean).join(', ');
+      const name = [r.name,   r.country].filter(Boolean).join(', ');
+      const item = document.createElement('div');
+      item.className = 'suggestion-item';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'suggestion-name';
+      nameSpan.textContent = r.name;
+      const subSpan = document.createElement('span');
+      subSpan.className = 'suggestion-sub';
+      subSpan.textContent = sub;
+      item.appendChild(nameSpan);
+      item.appendChild(subSpan);
+      item.addEventListener('mousedown', () => selectCity(Number(r.latitude), Number(r.longitude), name));
+      box.appendChild(item);
+    });
     box.style.display = '';
   } catch {}
 }
