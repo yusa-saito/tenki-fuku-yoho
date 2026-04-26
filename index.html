@@ -76,13 +76,14 @@
   .tab.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
 
   /* Week grid */
-  .week-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin-bottom: 1.25rem; }
-  .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.12s; }
+  .week-grid-scroll { overflow-x: auto; margin-bottom: 1.25rem; -webkit-overflow-scrolling: touch; }
+  .week-grid { display: flex; gap: 6px; min-width: max-content; }
+  .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.12s; width: 76px; flex-shrink: 0; }
   .day-card:hover { border-color: var(--border-hover); }
   .day-card.selected { border: 2px solid var(--blue); }
   .day-card.today { background: var(--bg-secondary); }
   .day-name { font-size: 11px; color: var(--text-secondary); }
-  .day-date { font-size: 10px; color: var(--text-secondary); margin-bottom: 2px; }
+  .day-date { font-size: 11px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
   .day-icon { font-size: 22px; margin: 4px 0; }
   .day-temps { display: flex; align-items: baseline; justify-content: center; gap: 4px; }
   .day-th { font-size: 13px; font-weight: 500; }
@@ -149,29 +150,7 @@
 
   @media (max-width: 620px) {
     .detail-panel { grid-template-columns: 1fr; }
-    .week-grid { gap: 3px; }
-    .day-card { padding: 6px 2px; }
-    .day-icon { font-size: 16px; margin: 2px 0; }
-    .day-name { font-size: 10px; }
-    .day-date { font-size: 9px; }
-    .day-temps { gap: 3px; }
-    .day-th { font-size: 12px; }
-    .day-tl { font-size: 10px; }
-    .day-meta { gap: 3px; }
-    .day-rain { font-size: 9px; }
-    .day-wind { font-size: 9px; }
-    .loc-select { min-width: 100px; font-size: 12px; }
     .current-loc { display: none; }
-  }
-  @media (max-width: 400px) {
-    .week-grid { gap: 2px; }
-    .day-card { padding: 5px 1px; }
-    .day-icon { font-size: 14px; }
-    .day-name { font-size: 9px; }
-    .day-date { display: none; }
-    .day-temps { gap: 2px; }
-    .day-th { font-size: 11px; }
-    .day-tl { font-size: 9px; }
   }
 </style>
 </head>
@@ -739,7 +718,7 @@ function getApparentTemp(tempH, windKph) {
 }
 
 function renderWeekGrid() {
-  const html = `<div class="week-grid">${weatherDays.map((d, i) => `
+  const html = `<div class="week-grid-scroll"><div class="week-grid">${weatherDays.map((d, i) => `
     <div class="day-card ${i===1?'today':''} ${i===selectedDay?'selected':''}" onclick="selectDay(${i})">
       <div class="day-name">${d.dayName}</div>
       <div class="day-date">${d.dateStr}</div>
@@ -748,7 +727,7 @@ function renderWeekGrid() {
       <div class="day-meta">
         <span class="day-rain" style="color:${d.rain>=60?'var(--red)':'var(--blue)'}">${d.rain}%</span>${d.windKph>=15?`<span class="day-wind" style="color:${d.windKph>=50?'var(--red)':d.windKph>=30?'var(--amber)':'var(--text-secondary)'}">🌬${d.windKph}</span>`:''}
       </div>
-    </div>`).join('')}</div>`;
+    </div>`).join('')}</div></div>`;
   document.getElementById('week-grid-wrap').innerHTML = html;
 }
 
