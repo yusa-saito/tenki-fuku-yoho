@@ -51,8 +51,15 @@
   .location-bar { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 1.25rem; }
   .location-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .loc-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
-  .loc-select { border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 6px 10px; font-size: 13px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; min-width: 120px; cursor: pointer; }
-  .loc-select:hover { border-color: var(--border-hover); }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 320px; }
+  .loc-search { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 6px 10px; font-size: 13px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; }
+  .loc-search:focus { outline: none; border-color: var(--border-hover); }
+  .search-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); z-index: 100; max-height: 240px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+  .suggestion-item { padding: 8px 12px; cursor: pointer; border-bottom: 0.5px solid var(--border); }
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover { background: var(--bg-secondary); }
+  .suggestion-name { font-size: 13px; display: block; }
+  .suggestion-sub { font-size: 11px; color: var(--text-secondary); }
   .gps-btn { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border); background: transparent; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit; }
   .gps-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
   .gps-btn.active { background: var(--blue-bg); color: var(--blue-mid); border-color: var(--blue); }
@@ -175,8 +182,10 @@
   <div class="location-bar">
     <div class="location-row">
       <span class="loc-label">📍 場所：</span>
-      <select class="loc-select" id="sel-pref" onchange="onPrefChange()"></select>
-      <select class="loc-select" id="sel-city" onchange="onCityChange()"></select>
+      <div class="search-wrap">
+        <input type="text" class="loc-search" id="loc-search" placeholder="都市名を検索（例: 東京、Paris、New York）" autocomplete="off" oninput="onSearchInput(this.value)" onblur="hideSearchSuggestions()">
+        <div class="search-suggestions" id="search-suggestions" style="display:none"></div>
+      </div>
       <button class="gps-btn" id="gps-btn" onclick="useGPS()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg>
         現在地を使用
@@ -253,55 +262,6 @@ const STORAGE_KEY = 'weather_outfit_v3';
 const WEATHER_CACHE_KEY = 'weather_cache_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30分
 
-const PREFECTURES = {
-  "北海道": [["札幌市",43.0642,141.3468],["函館市",41.7687,140.7288],["旭川市",43.7706,142.3651],["釧路市",42.9849,144.3820],["帯広市",42.9239,143.1965]],
-  "青森県": [["青森市",40.8221,140.7474],["弘前市",40.6031,140.4635],["八戸市",40.5123,141.4882]],
-  "岩手県": [["盛岡市",39.7036,141.1527],["奥州市",39.1442,141.1399],["花巻市",39.3882,141.1166]],
-  "宮城県": [["仙台市",38.2688,140.8721],["石巻市",38.4346,141.3026],["大崎市",38.5712,140.9548]],
-  "秋田県": [["秋田市",39.7186,140.1024],["横手市",39.3105,140.5651],["大仙市",39.4577,140.4799]],
-  "山形県": [["山形市",38.2404,140.3634],["鶴岡市",38.7297,139.8277],["酒田市",38.9141,139.8363]],
-  "福島県": [["福島市",37.7608,140.4747],["郡山市",37.3985,140.3832],["いわき市",37.0503,140.8877],["会津若松市",37.4902,139.9292]],
-  "茨城県": [["水戸市",36.3418,140.4468],["つくば市",36.0835,140.0764],["日立市",36.5991,140.6512]],
-  "栃木県": [["宇都宮市",36.5551,139.8828],["日光市",36.7199,139.6988],["那須塩原市",36.9261,140.0484]],
-  "群馬県": [["前橋市",36.3906,139.0604],["高崎市",36.3228,139.0034],["草津町",36.6196,138.5951]],
-  "埼玉県": [["さいたま市",35.8617,139.6455],["川越市",35.9253,139.4855],["所沢市",35.7993,139.4687],["熊谷市",36.1475,139.3885]],
-  "千葉県": [["千葉市",35.6073,140.1063],["船橋市",35.6946,139.9828],["柏市",35.8680,139.9756],["館山市",34.9966,139.8688]],
-  "東京都": [["東京",35.6895,139.6917],["八王子市",35.6661,139.3162],["立川市",35.6985,139.4144],["小笠原村",27.0930,142.1948]],
-  "神奈川県": [["横浜市",35.4437,139.6380],["川崎市",35.5309,139.7029],["鎌倉市",35.3197,139.5468],["小田原市",35.2657,139.1554],["箱根町",35.2328,139.0248]],
-  "新潟県": [["新潟市",37.9026,139.0232],["長岡市",37.4479,138.8509],["上越市",37.1470,138.2359]],
-  "富山県": [["富山市",36.6953,137.2113],["高岡市",36.7542,137.0255],["黒部市",36.8691,137.4536]],
-  "石川県": [["金沢市",36.5947,136.6256],["輪島市",37.3905,136.8994],["加賀市",36.3048,136.3173]],
-  "福井県": [["福井市",36.0652,136.2216],["敦賀市",35.6444,136.0554],["越前市",35.9012,136.1697]],
-  "山梨県": [["甲府市",35.6635,138.5686],["富士吉田市",35.4899,138.7940],["山梨市",35.6912,138.6886]],
-  "長野県": [["長野市",36.6485,138.1952],["松本市",36.2380,137.9717],["軽井沢町",36.3483,138.5979],["諏訪市",36.0386,138.1139]],
-  "岐阜県": [["岐阜市",35.3912,136.7223],["高山市",36.1411,137.2520],["大垣市",35.3596,136.6108]],
-  "静岡県": [["静岡市",34.9769,138.3831],["浜松市",34.7108,137.7261],["熱海市",35.0951,139.0724],["伊豆市",34.9773,138.9420]],
-  "愛知県": [["名古屋市",35.1815,136.9066],["豊橋市",34.7697,137.3922],["岡崎市",34.9481,137.1743],["豊田市",35.0830,137.1566]],
-  "三重県": [["津市",34.7303,136.5086],["伊勢市",34.4878,136.7060],["鳥羽市",34.4832,136.8432]],
-  "滋賀県": [["大津市",35.0045,135.8686],["彦根市",35.2745,136.2674],["長浜市",35.3790,136.2707]],
-  "京都府": [["京都市",35.0116,135.7681],["宇治市",34.8843,135.7998],["舞鶴市",35.4738,135.3716]],
-  "大阪府": [["大阪市",34.6937,135.5023],["堺市",34.5733,135.4829],["高槻市",34.8497,135.6174],["泉佐野市",34.4125,135.3322]],
-  "兵庫県": [["神戸市",34.6913,135.1830],["姫路市",34.8160,134.6861],["西宮市",34.7374,135.3412],["淡路市",34.4509,134.8984]],
-  "奈良県": [["奈良市",34.6851,135.8048],["橿原市",34.5074,135.7952],["吉野町",34.3997,135.8580]],
-  "和歌山県": [["和歌山市",34.2260,135.1675],["白浜町",33.6832,135.3443],["新宮市",33.7261,135.9942]],
-  "鳥取県": [["鳥取市",35.5011,134.2351],["米子市",35.4283,133.3310],["倉吉市",35.4304,133.8202]],
-  "島根県": [["松江市",35.4723,133.0505],["出雲市",35.3671,132.7550],["浜田市",34.8996,132.0758]],
-  "岡山県": [["岡山市",34.6618,133.9344],["倉敷市",34.5851,133.7714],["津山市",35.0693,134.0023]],
-  "広島県": [["広島市",34.3853,132.4553],["福山市",34.4860,133.3625],["呉市",34.2494,132.5658]],
-  "山口県": [["山口市",34.1861,131.4706],["下関市",33.9500,130.9451],["萩市",34.4053,131.3994]],
-  "徳島県": [["徳島市",34.0657,134.5593],["鳴門市",34.1826,134.6091],["三好市",33.9062,133.8104]],
-  "香川県": [["高松市",34.3401,134.0434],["丸亀市",34.2927,133.7990],["小豆島町",34.4796,134.2511]],
-  "愛媛県": [["松山市",33.8416,132.7657],["今治市",34.0659,132.9984],["宇和島市",33.2236,132.5638]],
-  "高知県": [["高知市",33.5597,133.5311],["四万十市",32.9942,132.9338],["室戸市",33.2913,134.1561]],
-  "福岡県": [["福岡市",33.5902,130.4017],["北九州市",33.8835,130.8752],["久留米市",33.3196,130.5085],["柳川市",33.1634,130.4042]],
-  "佐賀県": [["佐賀市",33.2635,130.3009],["唐津市",33.4505,129.9688],["嬉野市",33.0939,130.0972]],
-  "長崎県": [["長崎市",32.7503,129.8779],["佐世保市",33.1796,129.7149],["五島市",32.6956,128.8376]],
-  "熊本県": [["熊本市",32.8031,130.7079],["阿蘇市",32.9456,131.1234],["天草市",32.4822,130.1952]],
-  "大分県": [["大分市",33.2382,131.6126],["別府市",33.2840,131.4909],["由布市",33.1783,131.3679]],
-  "宮崎県": [["宮崎市",31.9077,131.4202],["都城市",31.7231,131.0635],["日南市",31.6012,131.3705]],
-  "鹿児島県": [["鹿児島市",31.5966,130.5571],["霧島市",31.7375,130.7626],["奄美市",28.3775,129.4956]],
-  "沖縄県": [["那覇市",26.2124,127.6809],["石垣市",24.3337,124.1550],["宮古島市",24.8056,125.2814],["名護市",26.5918,127.9773]]
-};
 
 const OUTFIT_TAGS = [
   { id: 'tank',       label: 'タンクトップ',   warmth: 1, cat: 'トップス' },
@@ -330,45 +290,51 @@ let selectedFeel = null;
 let selectedTags = new Set();
 let currentLat = 35.6895, currentLon = 139.6917, currentName = '東京都 東京';
 
-// Init selects
-(function initSelects() {
-  const prefSel = document.getElementById('sel-pref');
-  Object.keys(PREFECTURES).forEach(p => {
-    const o = document.createElement('option');
-    o.value = p; o.textContent = p;
-    prefSel.appendChild(o);
-  });
-  prefSel.value = '東京都';
-  populateCities('東京都');
-  document.getElementById('sel-city').value = '東京';
-})();
 
-function populateCities(pref) {
-  const citySel = document.getElementById('sel-city');
-  citySel.innerHTML = '';
-  (PREFECTURES[pref] || []).forEach(([name]) => {
-    const o = document.createElement('option');
-    o.value = name; o.textContent = name;
-    citySel.appendChild(o);
-  });
+let searchTimer = null;
+
+function onSearchInput(val) {
+  clearTimeout(searchTimer);
+  const box = document.getElementById('search-suggestions');
+  if (val.length < 2) { box.style.display = 'none'; return; }
+  searchTimer = setTimeout(() => searchCities(val), 300);
 }
 
-function onPrefChange() {
-  const pref = document.getElementById('sel-pref').value;
-  populateCities(pref);
-  onCityChange();
+async function searchCities(query) {
+  try {
+    const res = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=ja&format=json`
+    );
+    const data = await res.json();
+    const results = data.results || [];
+    const box = document.getElementById('search-suggestions');
+    if (!results.length) { box.style.display = 'none'; return; }
+    box.innerHTML = results.map(r => {
+      const sub = [r.admin1, r.country].filter(Boolean).join(', ');
+      const name = [r.name, r.country].filter(Boolean).join(', ');
+      return `<div class="suggestion-item" onmousedown="selectCity(${r.latitude}, ${r.longitude}, '${name.replace(/'/g,"\\'")}')">
+        <span class="suggestion-name">${r.name}</span>
+        <span class="suggestion-sub">${sub}</span>
+      </div>`;
+    }).join('');
+    box.style.display = '';
+  } catch {}
 }
 
-function onCityChange() {
-  const pref = document.getElementById('sel-pref').value;
-  const city = document.getElementById('sel-city').value;
-  const entry = (PREFECTURES[pref] || []).find(([n]) => n === city);
-  if (!entry) return;
-  currentLat = entry[1]; currentLon = entry[2];
-  currentName = pref + ' ' + city;
-  document.getElementById('current-loc-label').textContent = currentName;
+function selectCity(lat, lon, name) {
+  currentLat = lat; currentLon = lon; currentName = name;
+  document.getElementById('loc-search').value = name;
+  document.getElementById('search-suggestions').style.display = 'none';
+  document.getElementById('current-loc-label').textContent = name;
   document.getElementById('gps-btn').classList.remove('active');
   fetchWeather();
+}
+
+function hideSearchSuggestions() {
+  setTimeout(() => {
+    const box = document.getElementById('search-suggestions');
+    if (box) box.style.display = 'none';
+  }, 150);
 }
 
 function useGPS() {
