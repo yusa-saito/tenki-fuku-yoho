@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>週間天気 & 服装プランナー</title>
+<script src="https://unpkg.com/@supabase/supabase-js@latest/dist/umd/supabase.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-tertiary: #efefed;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b68;
+    --border: rgba(0,0,0,0.12);
+    --border-hover: rgba(0,0,0,0.25);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --blue: #378ADD;
+    --blue-bg: #E6F1FB;
+    --blue-text: #0C447C;
+    --blue-mid: #185FA5;
+    --green-text: #3B6D11;
+    --red: #E24B4A;
+    --amber: #BA7517;
+    --purple: #534AB7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #333330;
+      --text-primary: #f0f0ee;
+      --text-secondary: #a0a09e;
+      --border: rgba(255,255,255,0.12);
+      --border-hover: rgba(255,255,255,0.25);
+      --blue-bg: #0d2540;
+      --blue-text: #85B7EB;
+      --blue-mid: #85B7EB;
+      --green-text: #C0DD97;
+      --red: #F09595;
+      --amber: #FAC775;
+      --purple: #AFA9EC;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; }
+  .app { max-width: 940px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+  /* Location bar */
+  .location-bar { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 1.25rem; }
+  .location-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .loc-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+  .loc-select { border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 6px 10px; font-size: 13px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; min-width: 120px; cursor: pointer; }
+  .loc-select:hover { border-color: var(--border-hover); }
+  .gps-btn { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border); background: transparent; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit; }
+  .gps-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+  .gps-btn.active { background: var(--blue-bg); color: var(--blue-mid); border-color: var(--blue); }
+  .current-loc { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-left: auto; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  .header h1 { font-size: 20px; font-weight: 500; }
+  .header-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+
+  /* Tabs */
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+  .tab { padding: 7px 18px; border-radius: 20px; border: 0.5px solid var(--border); font-size: 13px; cursor: pointer; background: transparent; color: var(--text-secondary); font-family: inherit; transition: all 0.12s; }
+  .tab.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+
+  /* Week grid */
+  .week-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin-bottom: 1.25rem; }
+  .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.12s; }
+  .day-card:hover { border-color: var(--border-hover); }
+  .day-card.selected { border: 2px solid var(--blue); }
+  .day-card.today { background: var(--bg-secondary); }
+  .day-name { font-size: 11px; color: var(--text-secondary); }
+  .day-date { font-size: 10px; color: var(--text-secondary); margin-bottom: 2px; }
+  .day-icon { font-size: 22px; margin: 4px 0; }
+  .day-temps { display: flex; align-items: baseline; justify-content: center; gap: 4px; }
+  .day-th { font-size: 13px; font-weight: 500; }
+  .day-tl { font-size: 11px; color: var(--text-secondary); }
+  .day-meta { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 2px; flex-wrap: nowrap; }
+  .day-rain { font-size: 10px; }
+  .day-wind { font-size: 10px; }
+
+  /* Detail */
+  .detail-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
+  .card h3 { font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 1rem; }
+  .outfit-body { display: flex; gap: 16px; align-items: flex-start; margin-top: 8px; }
+  .outfit-model { flex-shrink: 0; }
+  .outfit-items { flex: 1; min-width: 0; }
+  .outfit-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  .outfit-item:last-child { border-bottom: none; }
+  .oi-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .oi-label { font-size: 13px; }
+  .oi-sub { font-size: 11px; color: var(--text-secondary); }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .hint-box { background: var(--blue-bg); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--blue-text); line-height: 1.6; margin-bottom: 10px; }
+  .ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--blue-mid); background: var(--blue-bg); padding: 2px 8px; border-radius: 10px; margin-bottom: 8px; }
+  .tip-box { margin-top: 12px; padding: 10px; background: var(--bg-secondary); border-radius: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* Record tab */
+  .feel-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .feel-btn { flex: 1; min-width: 90px; padding: 8px 4px; border-radius: 8px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-size: 12px; color: var(--text-secondary); font-family: inherit; transition: all 0.12s; text-align: center; }
+  .feel-btn:hover { border-color: var(--border-hover); }
+  .feel-btn.selected { border-color: var(--blue); color: var(--blue-mid); background: var(--blue-bg); }
+  .tag-cat-label { font-size: 11px; color: var(--text-secondary); margin: 10px 0 5px; }
+  .tag-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+  .tag-btn { padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-size: 12px; color: var(--text-secondary); font-family: inherit; transition: all 0.12s; }
+  .tag-btn:hover { border-color: var(--border-hover); }
+  .tag-btn.selected { border-color: var(--blue); color: var(--blue-mid); background: var(--blue-bg); }
+  .save-btn { width: 100%; margin-top: 10px; padding: 10px; border-radius: 8px; border: none; background: var(--text-primary); color: var(--bg-primary); font-size: 13px; cursor: pointer; font-family: inherit; }
+  .save-btn:hover { opacity: 0.85; }
+  .feedback { font-size: 13px; color: var(--green-text); margin-top: 8px; display: none; }
+
+  /* History */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
+  .stat-box { background: var(--bg-secondary); border-radius: 8px; padding: 10px; text-align: center; }
+  .stat-num { font-size: 22px; font-weight: 500; }
+  .stat-lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .hist-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-tag { font-size: 12px; background: var(--bg-secondary); display: inline-block; padding: 2px 8px; border-radius: 10px; margin-bottom: 4px; }
+  .suggest-box { background: var(--blue-bg); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--blue-text); line-height: 1.6; }
+
+
+  /* Accordion */
+  .accordion { border-top: 0.5px solid var(--border); margin: 10px 0 14px; }
+  .accordion summary { font-size: 13px; color: var(--text-secondary); cursor: pointer; list-style: none; padding: 10px 0; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+  .accordion summary::-webkit-details-marker { display: none; }
+  .accordion-arrow { width: 20px; height: 20px; transition: transform 0.2s; display: inline-flex; flex-shrink: 0; }
+  .accordion[open] .accordion-arrow { transform: rotate(180deg); }
+  .accordion-body { padding-bottom: 6px; }
+
+  /* Loading */
+  .loading-msg { text-align: center; padding: 2.5rem; color: var(--text-secondary); font-size: 14px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 620px) {
+    .detail-panel { grid-template-columns: 1fr; }
+    .week-grid { gap: 3px; }
+    .day-card { padding: 6px 2px; }
+    .day-icon { font-size: 16px; margin: 2px 0; }
+    .day-name { font-size: 10px; }
+    .day-date { font-size: 9px; }
+    .day-temps { gap: 3px; }
+    .day-th { font-size: 12px; }
+    .day-tl { font-size: 10px; }
+    .day-meta { gap: 3px; }
+    .day-rain { font-size: 9px; }
+    .day-wind { font-size: 9px; }
+    .loc-select { min-width: 100px; font-size: 12px; }
+    .current-loc { display: none; }
+  }
+  @media (max-width: 400px) {
+    .week-grid { gap: 2px; }
+    .day-card { padding: 5px 1px; }
+    .day-icon { font-size: 14px; }
+    .day-name { font-size: 9px; }
+    .day-date { display: none; }
+    .day-temps { gap: 2px; }
+    .day-th { font-size: 11px; }
+    .day-tl { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Location bar -->
+  <div class="location-bar">
+    <div class="location-row">
+      <span class="loc-label">📍 場所：</span>
+      <select class="loc-select" id="sel-pref" onchange="onPrefChange()"></select>
+      <select class="loc-select" id="sel-city" onchange="onCityChange()"></select>
+      <button class="gps-btn" id="gps-btn" onclick="useGPS()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg>
+        現在地を使用
+      </button>
+      <span class="current-loc" id="current-loc-label">東京都 東京</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>☁ 週間天気 &amp; 服装プランナー</h1>
+      <div class="header-sub" id="last-updated"></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('forecast')">予報</button>
+    <button class="tab" onclick="switchTab('history')">記録履歴</button>
+  </div>
+
+  <!-- Forecast tab -->
+  <div id="tab-forecast">
+    <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
+    <div id="detail-panel-wrap"></div>
+    <div id="record-inline-wrap"></div>
+  </div>
+
+  <!-- History tab -->
+  <div id="tab-history" style="display:none">
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="stat-records">0</div><div class="stat-lbl">記録数</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">連続記録日</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-comfort">-</div><div class="stat-lbl">快適率</div></div>
+      </div>
+      <div id="ai-suggest-box" style="display:none">
+        <div class="ai-badge">✦ AIパーソナル提案</div>
+        <div class="suggest-box" id="ai-suggest-text"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>過去の記録</h3>
+      <div id="history-list"><div style="font-size:13px;color:var(--text-secondary);">まだ記録がありません。</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== Supabase設定 =====
+const SUPABASE_URL = 'https://xticqepdhwbstdxhlkab.supabase.co';       // ← Supabaseプロジェクトの URL
+const SUPABASE_ANON_KEY = 'sb_publishable_ZFQNS3h6CSz7OGeUpcY5OA_Na2OiIA1'; // ← anon / public キー
+const USE_SUPABASE = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+const sb = USE_SUPABASE ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+async function initAuth() {
+  if (!USE_SUPABASE) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) await sb.auth.signInAnonymously();
+  } catch {}
+}
+
+function getDeviceId() {
+  let id = localStorage.getItem('device_id');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('device_id', id); }
+  return id;
+}
+// ========================
+
+const STORAGE_KEY = 'weather_outfit_v3';
+const WEATHER_CACHE_KEY = 'weather_cache_v1';
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30分
+
+const PREFECTURES = {
+  "北海道": [["札幌市",43.0642,141.3468],["函館市",41.7687,140.7288],["旭川市",43.7706,142.3651],["釧路市",42.9849,144.3820],["帯広市",42.9239,143.1965]],
+  "青森県": [["青森市",40.8221,140.7474],["弘前市",40.6031,140.4635],["八戸市",40.5123,141.4882]],
+  "岩手県": [["盛岡市",39.7036,141.1527],["奥州市",39.1442,141.1399],["花巻市",39.3882,141.1166]],
+  "宮城県": [["仙台市",38.2688,140.8721],["石巻市",38.4346,141.3026],["大崎市",38.5712,140.9548]],
+  "秋田県": [["秋田市",39.7186,140.1024],["横手市",39.3105,140.5651],["大仙市",39.4577,140.4799]],
+  "山形県": [["山形市",38.2404,140.3634],["鶴岡市",38.7297,139.8277],["酒田市",38.9141,139.8363]],
+  "福島県": [["福島市",37.7608,140.4747],["郡山市",37.3985,140.3832],["いわき市",37.0503,140.8877],["会津若松市",37.4902,139.9292]],
+  "茨城県": [["水戸市",36.3418,140.4468],["つくば市",36.0835,140.0764],["日立市",36.5991,140.6512]],
+  "栃木県": [["宇都宮市",36.5551,139.8828],["日光市",36.7199,139.6988],["那須塩原市",36.9261,140.0484]],
+  "群馬県": [["前橋市",36.3906,139.0604],["高崎市",36.3228,139.0034],["草津町",36.6196,138.5951]],
+  "埼玉県": [["さいたま市",35.8617,139.6455],["川越市",35.9253,139.4855],["所沢市",35.7993,139.4687],["熊谷市",36.1475,139.3885]],
+  "千葉県": [["千葉市",35.6073,140.1063],["船橋市",35.6946,139.9828],["柏市",35.8680,139.9756],["館山市",34.9966,139.8688]],
+  "東京都": [["東京",35.6895,139.6917],["八王子市",35.6661,139.3162],["立川市",35.6985,139.4144],["小笠原村",27.0930,142.1948]],
+  "神奈川県": [["横浜市",35.4437,139.6380],["川崎市",35.5309,139.7029],["鎌倉市",35.3197,139.5468],["小田原市",35.2657,139.1554],["箱根町",35.2328,139.0248]],
+  "新潟県": [["新潟市",37.9026,139.0232],["長岡市",37.4479,138.8509],["上越市",37.1470,138.2359]],
+  "富山県": [["富山市",36.6953,137.2113],["高岡市",36.7542,137.0255],["黒部市",36.8691,137.4536]],
+  "石川県": [["金沢市",36.5947,136.6256],["輪島市",37.3905,136.8994],["加賀市",36.3048,136.3173]],
+  "福井県": [["福井市",36.0652,136.2216],["敦賀市",35.6444,136.0554],["越前市",35.9012,136.1697]],
+  "山梨県": [["甲府市",35.6635,138.5686],["富士吉田市",35.4899,138.7940],["山梨市",35.6912,138.6886]],
+  "長野県": [["長野市",36.6485,138.1952],["松本市",36.2380,137.9717],["軽井沢町",36.3483,138.5979],["諏訪市",36.0386,138.1139]],
+  "岐阜県": [["岐阜市",35.3912,136.7223],["高山市",36.1411,137.2520],["大垣市",35.3596,136.6108]],
+  "静岡県": [["静岡市",34.9769,138.3831],["浜松市",34.7108,137.7261],["熱海市",35.0951,139.0724],["伊豆市",34.9773,138.9420]],
+  "愛知県": [["名古屋市",35.1815,136.9066],["豊橋市",34.7697,137.3922],["岡崎市",34.9481,137.1743],["豊田市",35.0830,137.1566]],
+  "三重県": [["津市",34.7303,136.5086],["伊勢市",34.4878,136.7060],["鳥羽市",34.4832,136.8432]],
+  "滋賀県": [["大津市",35.0045,135.8686],["彦根市",35.2745,136.2674],["長浜市",35.3790,136.2707]],
+  "京都府": [["京都市",35.0116,135.7681],["宇治市",34.8843,135.7998],["舞鶴市",35.4738,135.3716]],
+  "大阪府": [["大阪市",34.6937,135.5023],["堺市",34.5733,135.4829],["高槻市",34.8497,135.6174],["泉佐野市",34.4125,135.3322]],
+  "兵庫県": [["神戸市",34.6913,135.1830],["姫路市",34.8160,134.6861],["西宮市",34.7374,135.3412],["淡路市",34.4509,134.8984]],
+  "奈良県": [["奈良市",34.6851,135.8048],["橿原市",34.5074,135.7952],["吉野町",34.3997,135.8580]],
+  "和歌山県": [["和歌山市",34.2260,135.1675],["白浜町",33.6832,135.3443],["新宮市",33.7261,135.9942]],
+  "鳥取県": [["鳥取市",35.5011,134.2351],["米子市",35.4283,133.3310],["倉吉市",35.4304,133.8202]],
+  "島根県": [["松江市",35.4723,133.0505],["出雲市",35.3671,132.7550],["浜田市",34.8996,132.0758]],
+  "岡山県": [["岡山市",34.6618,133.9344],["倉敷市",34.5851,133.7714],["津山市",35.0693,134.0023]],
+  "広島県": [["広島市",34.3853,132.4553],["福山市",34.4860,133.3625],["呉市",34.2494,132.5658]],
+  "山口県": [["山口市",34.1861,131.4706],["下関市",33.9500,130.9451],["萩市",34.4053,131.3994]],
+  "徳島県": [["徳島市",34.0657,134.5593],["鳴門市",34.1826,134.6091],["三好市",33.9062,133.8104]],
+  "香川県": [["高松市",34.3401,134.0434],["丸亀市",34.2927,133.7990],["小豆島町",34.4796,134.2511]],
+  "愛媛県": [["松山市",33.8416,132.7657],["今治市",34.0659,132.9984],["宇和島市",33.2236,132.5638]],
+  "高知県": [["高知市",33.5597,133.5311],["四万十市",32.9942,132.9338],["室戸市",33.2913,134.1561]],
+  "福岡県": [["福岡市",33.5902,130.4017],["北九州市",33.8835,130.8752],["久留米市",33.3196,130.5085],["柳川市",33.1634,130.4042]],
+  "佐賀県": [["佐賀市",33.2635,130.3009],["唐津市",33.4505,129.9688],["嬉野市",33.0939,130.0972]],
+  "長崎県": [["長崎市",32.7503,129.8779],["佐世保市",33.1796,129.7149],["五島市",32.6956,128.8376]],
+  "熊本県": [["熊本市",32.8031,130.7079],["阿蘇市",32.9456,131.1234],["天草市",32.4822,130.1952]],
+  "大分県": [["大分市",33.2382,131.6126],["別府市",33.2840,131.4909],["由布市",33.1783,131.3679]],
+  "宮崎県": [["宮崎市",31.9077,131.4202],["都城市",31.7231,131.0635],["日南市",31.6012,131.3705]],
+  "鹿児島県": [["鹿児島市",31.5966,130.5571],["霧島市",31.7375,130.7626],["奄美市",28.3775,129.4956]],
+  "沖縄県": [["那覇市",26.2124,127.6809],["石垣市",24.3337,124.1550],["宮古島市",24.8056,125.2814],["名護市",26.5918,127.9773]]
+};
+
+const OUTFIT_TAGS = [
+  { id: 'tank',       label: 'タンクトップ',   warmth: 1, cat: 'トップス' },
+  { id: 'tshirt',     label: '半袖Tシャツ',    warmth: 2, cat: 'トップス' },
+  { id: 'longsleeve', label: '長袖シャツ',      warmth: 3, cat: 'トップス' },
+  { id: 'knit',       label: 'ニット',          warmth: 4, cat: 'トップス' },
+  { id: 'turtleneck', label: 'タートルネック',  warmth: 4, cat: 'トップス' },
+  { id: 'hoodie',     label: 'パーカー',        warmth: 3, cat: 'トップス' },
+  { id: 'cardigan',   label: 'カーディガン',    warmth: 2, cat: 'アウター' },
+  { id: 'jacket',     label: '薄手ジャケット',  warmth: 3, cat: 'アウター' },
+  { id: 'coat',       label: 'コート',          warmth: 4, cat: 'アウター' },
+  { id: 'down',       label: 'ダウン・中綿',    warmth: 5, cat: 'アウター' },
+  { id: 'shorts',     label: 'ショートパンツ',  warmth: 1, cat: 'ボトムス' },
+  { id: 'skirt',      label: 'スカート',        warmth: 2, cat: 'ボトムス' },
+  { id: 'pants',      label: '薄手パンツ',      warmth: 3, cat: 'ボトムス' },
+  { id: 'jeans',      label: 'デニム',          warmth: 4, cat: 'ボトムス' },
+  { id: 'muffler',    label: 'マフラー',        warmth: 3, cat: '小物' },
+  { id: 'gloves',     label: '手袋',            warmth: 3, cat: '小物' },
+  { id: 'hat',        label: '帽子・ニット帽',  warmth: 2, cat: '小物' },
+  { id: 'umbrella',   label: '傘',              warmth: 0, cat: '小物' },
+];
+
+let weatherDays = [];
+let selectedDay = 0;
+let selectedFeel = null;
+let selectedTags = new Set();
+let currentLat = 35.6895, currentLon = 139.6917, currentName = '東京都 東京';
+
+// Init selects
+(function initSelects() {
+  const prefSel = document.getElementById('sel-pref');
+  Object.keys(PREFECTURES).forEach(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = p;
+    prefSel.appendChild(o);
+  });
+  prefSel.value = '東京都';
+  populateCities('東京都');
+  document.getElementById('sel-city').value = '東京';
+})();
+
+function populateCities(pref) {
+  const citySel = document.getElementById('sel-city');
+  citySel.innerHTML = '';
+  (PREFECTURES[pref] || []).forEach(([name]) => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    citySel.appendChild(o);
+  });
+}
+
+function onPrefChange() {
+  const pref = document.getElementById('sel-pref').value;
+  populateCities(pref);
+  onCityChange();
+}
+
+function onCityChange() {
+  const pref = document.getElementById('sel-pref').value;
+  const city = document.getElementById('sel-city').value;
+  const entry = (PREFECTURES[pref] || []).find(([n]) => n === city);
+  if (!entry) return;
+  currentLat = entry[1]; currentLon = entry[2];
+  currentName = pref + ' ' + city;
+  document.getElementById('current-loc-label').textContent = currentName;
+  document.getElementById('gps-btn').classList.remove('active');
+  fetchWeather();
+}
+
+function useGPS() {
+  if (!navigator.geolocation) { alert('位置情報はこのブラウザでは使用できません。'); return; }
+  const btn = document.getElementById('gps-btn');
+  btn.innerHTML = '<span class="spinner"></span> 取得中...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    currentLat = pos.coords.latitude;
+    currentLon = pos.coords.longitude;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg> 現在地を使用`;
+    btn.classList.add('active');
+    currentName = `現在地 (${currentLat.toFixed(2)}, ${currentLon.toFixed(2)})`;
+    document.getElementById('current-loc-label').textContent = currentName;
+    fetchWeather();
+  }, () => {
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg> 現在地を使用`;
+    alert('位置情報の取得に失敗しました。東京のデータを使用します。');
+  });
+}
+
+const WMO_ICONS = {0:'☀',1:'🌤',2:'⛅',3:'🌥',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',77:'🌨',80:'🌦',81:'🌧',82:'⛈',85:'🌨',86:'🌨',95:'⛈',96:'⛈',99:'⛈'};
+const WMO_DESC = {0:'快晴',1:'ほぼ晴れ',2:'晴れ時々曇り',3:'曇り',45:'霧',48:'霧',51:'小雨',53:'雨',55:'雨',61:'小雨',63:'雨',65:'大雨',71:'小雪',73:'雪',75:'大雪',77:'霰',80:'にわか雨',81:'雨',82:'強い雨',85:'にわか雪',86:'にわか雪',95:'雷雨',96:'雷雨',99:'激しい雷雨'};
+const RAIN_CODES = new Set([51,53,55,61,63,65,80,81,82,95,96,99]);
+
+// head/face template (shared)
+function _head() {
+  return `
+    <path d="M19 26 Q14 56 20 80 Q28 91 28 73 Q33 54 40 50 Q47 54 52 73 Q52 91 60 80 Q66 56 61 26 Q52 5 28 5 Z" fill="#795548"/>
+    <circle cx="40" cy="26" r="21" fill="#F5CBA7"/>
+    <ellipse cx="40" cy="8" rx="19" ry="11" fill="#795548"/>
+    <ellipse cx="33" cy="23" rx="2.5" ry="2" fill="#333"/>
+    <ellipse cx="47" cy="23" rx="2.5" ry="2" fill="#333"/>
+    <ellipse cx="28" cy="31" rx="4" ry="2" fill="#F4A0A0" opacity="0.35"/>
+    <ellipse cx="52" cy="31" rx="4" ry="2" fill="#F4A0A0" opacity="0.35"/>
+    <ellipse cx="40" cy="37" rx="4" ry="1.8" fill="#E07070"/>
+    <rect x="36" y="47" width="8" height="10" fill="#F5CBA7"/>`;
+}
+const OUTFIT_SVGS = {
+  /* 30°C〜: ストライプキャミ + ワイドショーツ */
+  hot: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 92 L59 92 L57 152 L42 152 L40 122 L38 122 L23 152 Z" fill="#5BADA5"/>
+    <rect x="39" y="92" width="2" height="30" fill="#4A9890"/>
+    <rect x="19" y="150" width="21" height="13" rx="5" fill="#1C1C1C"/>
+    <rect x="42" y="150" width="21" height="13" rx="5" fill="#1C1C1C"/>
+    <rect x="19" y="157" width="21" height="6" rx="3" fill="white"/>
+    <rect x="42" y="157" width="21" height="6" rx="3" fill="white"/>
+    <path d="M22 55 L58 55 L58 92 L22 92 Z" fill="white"/>
+    <rect x="22" y="64" width="36" height="9" fill="#5BADA5"/>
+    <rect x="22" y="81" width="36" height="9" fill="#5BADA5"/>
+    <rect x="30" y="44" width="6" height="13" rx="3" fill="white"/>
+    <rect x="44" y="44" width="6" height="13" rx="3" fill="white"/>
+    <rect x="8" y="55" width="14" height="48" rx="7" fill="#F0856E"/>
+    <rect x="58" y="55" width="14" height="48" rx="7" fill="#F0856E"/>
+    <ellipse cx="15" cy="106" rx="8" ry="6" fill="#F0856E"/>
+    <ellipse cx="65" cy="106" rx="8" ry="6" fill="#F0856E"/>
+    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
+    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+  </svg>`,
+  /* 25〜30°C: ノースリーブブラウス + ワイドパンツ */
+  warm: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 98 L60 98 L58 152 L43 152 L40 124 L37 124 L22 152 Z" fill="#8BB4C8"/>
+    <rect x="39" y="98" width="2" height="26" fill="#7AA4B8"/>
+    <rect x="19" y="150" width="22" height="13" rx="5" fill="#3A3A3A"/>
+    <rect x="41" y="150" width="22" height="13" rx="5" fill="#3A3A3A"/>
+    <rect x="20" y="94" width="40" height="7" rx="3" fill="#C8A870"/>
+    <rect x="37" y="92" width="6" height="9" rx="2" fill="#A08850"/>
+    <path d="M24 55 L56 55 L58 98 L22 98 Z" fill="#FCEBD4"/>
+    <rect x="28" y="44" width="9" height="13" rx="4" fill="#FCEBD4"/>
+    <rect x="43" y="44" width="9" height="13" rx="4" fill="#FCEBD4"/>
+    <rect x="8" y="55" width="14" height="50" rx="7" fill="#F0856E"/>
+    <rect x="58" y="55" width="14" height="50" rx="7" fill="#F0856E"/>
+    <ellipse cx="15" cy="108" rx="8" ry="6" fill="#F0856E"/>
+    <ellipse cx="65" cy="108" rx="8" ry="6" fill="#F0856E"/>
+    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
+    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+  </svg>`,
+  /* 20〜25°C: 長袖シャツ + チノパン */
+  comfortable_w: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 100 L59 100 L57 152 L42 152 L40 126 L38 126 L23 152 Z" fill="#C4B090"/>
+    <rect x="39" y="100" width="2" height="26" fill="#B4A080"/>
+    <rect x="19" y="150" width="22" height="13" rx="5" fill="#9A8870"/>
+    <rect x="41" y="150" width="22" height="13" rx="5" fill="#9A8870"/>
+    <path d="M20 55 L60 55 L60 100 L20 100 Z" fill="#B8CCE8"/>
+    <path d="M32 55 L26 66 L40 70 L54 66 L48 55" fill="#A8BCE0"/>
+    <rect x="38" y="44" width="4" height="13" fill="#F0856E"/>
+    <rect x="8" y="55" width="14" height="52" rx="7" fill="#B8CCE8"/>
+    <rect x="58" y="55" width="14" height="52" rx="7" fill="#B8CCE8"/>
+    <rect x="8" y="98" width="14" height="9" rx="4" fill="#A8BCE0"/>
+    <rect x="58" y="98" width="14" height="9" rx="4" fill="#A8BCE0"/>
+    <ellipse cx="15" cy="110" rx="8" ry="6" fill="#F0856E"/>
+    <ellipse cx="65" cy="110" rx="8" ry="6" fill="#F0856E"/>
+    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
+    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+  </svg>`,
+  /* 15〜20°C: オーバーサイズニット + ダークパンツ */
+  comfortable: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 102 L59 102 L57 152 L42 152 L40 128 L38 128 L23 152 Z" fill="#2D4A6A"/>
+    <rect x="39" y="102" width="2" height="26" fill="#243D5A"/>
+    <rect x="19" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
+    <rect x="41" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
+    <path d="M18 58 L62 58 L62 104 L18 104 Z" fill="#F0E0B8"/>
+    <rect x="18" y="58" width="44" height="8" fill="#E8D0A0"/>
+    <rect x="18" y="74" width="44" height="8" fill="#E8D0A0"/>
+    <rect x="18" y="90" width="44" height="8" fill="#E8D0A0"/>
+    <path d="M30 58 L25 72 L40 76 L55 72 L50 58" fill="#E0CE98"/>
+    <rect x="5" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
+    <rect x="60" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
+    <rect x="5" y="68" width="15" height="7" fill="#E8D0A0"/>
+    <rect x="5" y="83" width="15" height="7" fill="#E8D0A0"/>
+    <rect x="5" y="98" width="15" height="7" fill="#E8D0A0"/>
+    <rect x="60" y="68" width="15" height="7" fill="#E8D0A0"/>
+    <rect x="60" y="83" width="15" height="7" fill="#E8D0A0"/>
+    <rect x="60" y="98" width="15" height="7" fill="#E8D0A0"/>
+    <rect x="5" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
+    <rect x="60" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
+    <ellipse cx="12" cy="115" rx="8" ry="6" fill="#F0856E"/>
+    <ellipse cx="68" cy="115" rx="8" ry="6" fill="#F0856E"/>
+    <rect x="35" y="44" width="10" height="16" fill="#F0856E"/>
+    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+  </svg>`,
+  /* 10〜15°C: ロングカーディガン + パンツ */
+  cool: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
+    <path d="M22 102 L58 102 L56 152 L41 152 L40 128 L39 128 L24 152 Z" fill="#546778"/>
+    <rect x="39" y="102" width="2" height="26" fill="#445668"/>
+    <rect x="20" y="150" width="21" height="13" rx="5" fill="#37485A"/>
+    <rect x="41" y="150" width="21" height="13" rx="5" fill="#37485A"/>
+    <rect x="35" y="55" width="10" height="49" fill="#FCEBD4"/>
+    <path d="M20 55 L35 55 L33 104 L20 104 Z" fill="#ECC0C0"/>
+    <path d="M45 55 L60 55 L60 104 L47 104 Z" fill="#ECC0C0"/>
+    <path d="M30 55 L25 66 L34 68 L35 55" fill="#DCA8A8"/>
+    <path d="M50 55 L55 66 L46 68 L45 55" fill="#DCA8A8"/>
+    <circle cx="32" cy="75" r="3" fill="#DCA8A8"/>
+    <circle cx="32" cy="88" r="3" fill="#DCA8A8"/>
+    <circle cx="32" cy="101" r="3" fill="#DCA8A8"/>
+    <rect x="6" y="55" width="15" height="54" rx="7" fill="#ECC0C0"/>
+    <rect x="59" y="55" width="15" height="54" rx="7" fill="#ECC0C0"/>
+    <rect x="6" y="100" width="15" height="9" rx="4" fill="#DCA8A8"/>
+    <rect x="59" y="100" width="15" height="9" rx="4" fill="#DCA8A8"/>
+    <ellipse cx="13" cy="112" rx="8" ry="6" fill="#F0856E"/>
+    <ellipse cx="67" cy="112" rx="8" ry="6" fill="#F0856E"/>
+    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
+    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+  </svg>`,
+  /* 5〜10°C: トレンチコート + ブーツ */
+  cold: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18 104 L62 104 L60 145 L42 145 L40 125 L38 125 L20 145 Z" fill="#2D3A2A"/>
+    <rect x="18" y="143" width="24" height="20" rx="6" fill="#3E2A1A"/>
+    <rect x="40" y="143" width="24" height="20" rx="6" fill="#3E2A1A"/>
+    <rect x="18" y="156" width="24" height="7" rx="3" fill="#2E1E0E"/>
+    <rect x="40" y="156" width="24" height="7" rx="3" fill="#2E1E0E"/>
+    <path d="M16 52 L64 52 L64 106 L16 106 Z" fill="#D4C0A8"/>
+    <path d="M32 52 L22 68 L36 72 L40 52" fill="#C4B090"/>
+    <path d="M48 52 L58 68 L44 72 L40 52" fill="#C4B090"/>
+    <rect x="38" y="72" width="4" height="34" fill="#C4B090"/>
+    <rect x="16" y="88" width="48" height="8" rx="4" fill="#C4B090"/>
+    <rect x="36" y="86" width="8" height="12" rx="2" fill="#B4A07A"/>
+    <circle cx="34" cy="78" r="3" fill="#B4A07A"/>
+    <circle cx="46" cy="78" r="3" fill="#B4A07A"/>
+    <circle cx="34" cy="106" r="3" fill="#B4A07A"/>
+    <circle cx="46" cy="106" r="3" fill="#B4A07A"/>
+    <rect x="4" y="52" width="14" height="58" rx="7" fill="#D4C0A8"/>
+    <rect x="62" y="52" width="14" height="58" rx="7" fill="#D4C0A8"/>
+    <rect x="4" y="100" width="14" height="10" rx="5" fill="#C4B090"/>
+    <rect x="62" y="100" width="14" height="10" rx="5" fill="#C4B090"/>
+    <ellipse cx="11" cy="113" rx="8" ry="6" fill="#F0856E"/>
+    <ellipse cx="69" cy="113" rx="8" ry="6" fill="#F0856E"/>
+    <rect x="35" y="40" width="10" height="14" fill="#F0856E"/>
+    <path d="M22 40 Q40 50 58 40 L58 54 Q40 62 22 54 Z" fill="#B8CCE0"/>
+    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+  </svg>`,
+  /* 5°C以下: ダウンコート + ニット帽 + ブーツ */
+  very_cold: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 106 L64 106 L62 146 L43 146 L40 126 L37 126 L18 146 Z" fill="#2D3748"/>
+    <rect x="16" y="144" width="26" height="19" rx="6" fill="#4E342E"/>
+    <rect x="40" y="144" width="26" height="19" rx="6" fill="#4E342E"/>
+    <rect x="16" y="157" width="26" height="6" rx="3" fill="#3E2723"/>
+    <rect x="40" y="157" width="26" height="6" rx="3" fill="#3E2723"/>
+    <path d="M13 54 L67 54 L67 108 L13 108 Z" fill="#90BED8"/>
+    <rect x="13" y="54" width="54" height="9" fill="#7AAEC8"/>
+    <rect x="13" y="71" width="54" height="9" fill="#7AAEC8"/>
+    <rect x="13" y="88" width="54" height="9" fill="#7AAEC8"/>
+    <rect x="13" y="105" width="54" height="9" fill="#7AAEC8"/>
+    <rect x="38" y="54" width="4" height="54" fill="#6898B8"/>
+    <rect x="1" y="54" width="14" height="58" rx="7" fill="#90BED8"/>
+    <rect x="65" y="54" width="14" height="58" rx="7" fill="#90BED8"/>
+    <rect x="1" y="64" width="14" height="8" fill="#7AAEC8"/>
+    <rect x="1" y="80" width="14" height="8" fill="#7AAEC8"/>
+    <rect x="1" y="96" width="14" height="8" fill="#7AAEC8"/>
+    <rect x="65" y="64" width="14" height="8" fill="#7AAEC8"/>
+    <rect x="65" y="80" width="14" height="8" fill="#7AAEC8"/>
+    <rect x="65" y="96" width="14" height="8" fill="#7AAEC8"/>
+    <rect x="1" y="104" width="14" height="8" rx="4" fill="#6898B8"/>
+    <rect x="65" y="104" width="14" height="8" rx="4" fill="#6898B8"/>
+    <ellipse cx="8" cy="115" rx="9" ry="6" fill="#F0856E"/>
+    <ellipse cx="72" cy="115" rx="9" ry="6" fill="#F0856E"/>
+    <path d="M24 42 Q40 50 56 42 L56 56 Q40 64 24 56 Z" fill="#F4B8C4"/>
+    <rect x="35" y="42" width="10" height="14" fill="#F0856E"/>
+    <ellipse cx="40" cy="19" rx="21" ry="16" fill="#1C1C1C"/>
+    <ellipse cx="40" cy="30" rx="17" ry="17" fill="#F0856E"/>
+    <ellipse cx="40" cy="14" rx="21" ry="12" fill="#1C1C1C"/>
+    <rect x="19" y="12" width="42" height="7" rx="2" fill="#2C2C2C"/>
+    <ellipse cx="23" cy="30" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="57" cy="30" rx="3.5" ry="4" fill="#F0856E"/>
+    <ellipse cx="40" cy="38" rx="2.2" ry="2.8" fill="#D06050"/>
+  </svg>`,
+};
+
+function parseWeatherData(data) {
+  const d = data.daily;
+  const days = ['日','月','火','水','木','金','土'];
+  return d.time.map((dateStr, i) => {
+    const dt = new Date(dateStr + 'T00:00:00');
+    const rain = Math.min(100, Math.round((d.precipitation_sum[i] || 0) * 10));
+    const code = d.weathercode[i];
+    const windKph = Math.round(d.windspeed_10m_max[i] || 0);
+    return {
+      date: dt,
+      dateStr: `${dt.getMonth()+1}/${dt.getDate()}`,
+      dayName: i === 0 ? '昨日' : i === 1 ? '今日' : i === 2 ? '明日' : days[dt.getDay()],
+      icon: WMO_ICONS[code] || '🌡',
+      desc: WMO_DESC[code] || '不明',
+      tempH: Math.round(d.temperature_2m_max[i]),
+      tempL: Math.round(d.temperature_2m_min[i]),
+      rain,
+      isRainy: RAIN_CODES.has(code),
+      windKph,
+      isWindy: windKph >= 30,
+    };
+  });
+}
+
+function applyWeatherDays(days, updatedAt) {
+  weatherDays = days;
+  document.getElementById('last-updated').textContent = `更新: ${new Date(updatedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}`;
+  renderWeekGrid();
+  selectDay(1);
+}
+
+async function fetchWeather() {
+  // キャッシュがあれば即座に表示
+  try {
+    const cache = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
+    if (cache && cache.lat === currentLat && cache.lon === currentLon && Date.now() - cache.at < CACHE_TTL_MS) {
+      // dateはJSONで文字列になるのでDateに戻す
+      const cached = cache.days.map(d => ({ ...d, date: new Date(d.date) }));
+      applyWeatherDays(cached, cache.at);
+      return; // 30分以内のキャッシュはAPIを叩かない
+    }
+    if (cache && cache.lat === currentLat && cache.lon === currentLon) {
+      // 期限切れだが表示だけ先にする
+      const cached = cache.days.map(d => ({ ...d, date: new Date(d.date) }));
+      applyWeatherDays(cached, cache.at);
+    } else {
+      document.getElementById('week-grid-wrap').innerHTML = '<div class="loading-msg"><span class="spinner"></span>天気を取得中...</div>';
+      document.getElementById('detail-panel-wrap').innerHTML = '';
+    }
+  } catch {}
+
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&timezone=Asia%2FTokyo&past_days=1&forecast_days=7`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const days = parseWeatherData(data);
+    const now = Date.now();
+    try {
+      localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ lat: currentLat, lon: currentLon, at: now, days }));
+    } catch {}
+    applyWeatherDays(days, now);
+  } catch(e) {
+    if (!weatherDays.length) {
+      document.getElementById('week-grid-wrap').innerHTML = '<div class="loading-msg">天気の取得に失敗しました。ネットワークを確認してください。</div>';
+    }
+  }
+}
+
+function getFeel(temp) {
+  if (temp >= 30) return { level:'hot', label:'猛暑', color:'#E24B4A' };
+  if (temp >= 25) return { level:'warm', label:'暑い', color:'#BA7517' };
+  if (temp >= 20) return { level:'comfortable_w', label:'やや暑い', color:'#639922' };
+  if (temp >= 15) return { level:'comfortable', label:'快適', color:'#3B6D11' };
+  if (temp >= 10) return { level:'cool', label:'やや寒い', color:'#185FA5' };
+  if (temp >= 5)  return { level:'cold', label:'寒い', color:'#534AB7' };
+  return { level:'very_cold', label:'極寒', color:'#3C3489' };
+}
+
+function getOutfit(day, records) {
+  // ① 体感温度（風寒指数）を服装レベル選定に使用
+  const apparentTemp = getApparentTemp(day.tempH, day.windKph);
+  const lvl = getFeel(apparentTemp).level;
+  const adj = getAdj(records, day.tempH);
+  const levels = ['very_cold','cold','cool','comfortable','comfortable_w','warm','hot'];
+  const adjIdx = Math.max(0, Math.min(levels.length-1, levels.indexOf(lvl) + adj));
+  const adjLvl = levels[adjIdx];
+  const outfits = {
+    hot:          [{i:'👙',l:'タンクトップ・キャミソール',s:'熱中症に注意！とにかく薄着で'},{i:'👕',l:'半袖',s:'通気性の良いコットンやリネン'},{i:'🧴',l:'日焼け止め・サングラス',s:'UV対策も忘れずに'}],
+    warm:         [{i:'👕',l:'五分袖・ノースリーブ',s:'薄手のシャツやカットソー'},{i:'🪢',l:'シースルー・シフォン素材',s:'涼しく過ごせる透け感素材'},{i:'🧶',l:'薄手のコットンニット',s:'朝晩の軽い羽織りにも'}],
+    comfortable_w:[{i:'👔',l:'長袖シャツ・ブラウス',s:'袖捲りで気温調節しやすい'},{i:'🧥',l:'薄手カーディガン',s:'朝晩の寒暖差対策に'},{i:'🪆',l:'薄手のストール',s:'脱ぎ着しやすく便利'}],
+    comfortable:  [{i:'🧶',l:'薄手セーター（コットン）',s:'軽くて動きやすい素材を'},{i:'🧥',l:'カーディガン・ジャケット',s:'重ね着で体温調節'},{i:'👔',l:'タートルネック',s:'首元を温めて体感UP'},{i:'🪆',l:'ストール',s:'日陰・雨天の肌寒さ対策に'}],
+    cool:         [{i:'🧥',l:'トレンチコート',s:'コーデュロイやウール素材が◎'},{i:'🧶',l:'厚手セーター（ウール・カシミヤ）',s:'暖かい素材で防寒'},{i:'🧥',l:'キルティングジャケット・レザージャケット',s:'防風素材が活躍'},{i:'🧣',l:'マフラーなどの小物',s:'首元から冷気を防いで'}],
+    cold:         [{i:'🧥',l:'冬物コート・ダウンジャケット',s:'しっかりした防寒アウターを'},{i:'🧥',l:'ファー・ボア系アウター',s:'暖かみのある素材で'},{i:'🧣',l:'マフラー・手袋',s:'首・手首・足首の3首をガード'},{i:'🧶',l:'暖かいインナー',s:'インナーで体温キープが基本'}],
+    very_cold:    [{i:'🧥',l:'厚手ダウン',s:'完全防備！中綿たっぷりのものを'},{i:'🧶',l:'厚手のセーター（ウール）',s:'インナーとして重ね着'},{i:'👕',l:'厚手のインナー',s:'ヒートテックなど防寒インナー必須'},{i:'🧣',l:'マフラー・手袋・帽子',s:'全身の防寒を徹底して'}],
+  };
+  let items = outfits[adjLvl] || outfits.comfortable;
+
+  // ③ 最低気温が低く寒暖差が大きい場合はレイヤリングアイテムを追加
+  const tempRange = day.tempH - day.tempL;
+  const hasLayerItem = items.some(it => it.l.includes('カーディガン') || it.l.includes('ジャケット') || it.l.includes('コート') || it.l.includes('ストール'));
+  if (tempRange >= 10 && !hasLayerItem) {
+    items = [...items, {i:'🧥', l:'脱ぎ着できる羽織り', s:`寒暖差${tempRange}°C・朝晩は冷え込みます`}];
+  }
+
+  if (day.isRainy || day.rain >= 60) items = [{i:'☂',l:'傘 or レインコート',s:'降水確率高め！必須'}, ...items];
+  else if (day.rain >= 30) items = [{i:'☂',l:'折り畳み傘',s:'念のため持参を'}, ...items];
+  if (day.windKph >= 50) items = [{i:'🌬',l:'スカート・ワンピース NG',s:`最大風速 ${day.windKph}km/h・非常に強い風`}, ...items];
+  else if (day.windKph >= 30) items = [{i:'🌬',l:'スカートは注意',s:`最大風速 ${day.windKph}km/h・風が強め`}, ...items];
+
+  const hints = [];
+  if (apparentTemp !== day.tempH) hints.push(`風で体感${apparentTemp}°C（実測${day.tempH}°C）`);
+  if (adj > 0) hints.push('記録から: 寒がり傾向のため厚着に調整');
+  else if (adj < 0) hints.push('記録から: 暑がり傾向のため薄着に調整');
+  if (tempRange >= 10) hints.push(`寒暖差${tempRange}°C・重ね着で対応を`);
+  const hint = hints.join(' / ');
+  return { items, hint, svg: OUTFIT_SVGS[adjLvl] || '' };
+}
+
+function parseOutfitTags(outfit) {
+  try { const p = JSON.parse(outfit); if (Array.isArray(p)) return p; } catch {}
+  return [];
+}
+
+function getRefWarmth(temp) {
+  if (temp >= 30) return 1.5;
+  if (temp >= 25) return 2.0;
+  if (temp >= 20) return 2.5;
+  if (temp >= 15) return 3.5;
+  if (temp >= 10) return 4.0;
+  if (temp >= 5)  return 4.5;
+  return 5.0;
+}
+
+function getAdj(records, temp) {
+  if (!records.length) return 0;
+  const near = records
+    .map((r, i) => ({ ...r, idx: i }))
+    .filter(r => Math.abs(r.temp - temp) <= 5);
+  if (!near.length) return 0;
+  const map = { very_cold:-2, cold:-1, just_right:0, warm:1, very_warm:2 };
+  let weightedSum = 0, totalWeight = 0;
+  near.forEach(r => {
+    const w = 1 / (r.idx + 1);
+    let score = map[r.feel] || 0;
+    // 着用アイテムの暖かさスコアで補正
+    const tags = parseOutfitTags(r.outfit);
+    if (tags.length > 0) {
+      const avgWarmth = tags.reduce((s, id) => {
+        const t = OUTFIT_TAGS.find(x => x.id === id);
+        return s + (t ? t.warmth : 3);
+      }, 0) / tags.length;
+      score += (avgWarmth - getRefWarmth(r.temp)) * 0.4;
+    }
+    weightedSum += score * w;
+    totalWeight += w;
+  });
+  return -Math.round(weightedSum / totalWeight);
+}
+
+// ① 風による体感温度を計算
+function getApparentTemp(tempH, windKph) {
+  if (windKph < 5) return tempH;
+  if (tempH <= 10) {
+    const v = Math.pow(windKph, 0.16);
+    return Math.round(13.12 + 0.6215 * tempH - 11.37 * v + 0.3965 * tempH * v);
+  }
+  if (tempH <= 25 && windKph >= 20) {
+    return Math.round(tempH - (windKph - 15) * 0.07);
+  }
+  return tempH;
+}
+
+function renderWeekGrid() {
+  const html = `<div class="week-grid">${weatherDays.map((d, i) => `
+    <div class="day-card ${i===1?'today':''} ${i===selectedDay?'selected':''}" onclick="selectDay(${i})">
+      <div class="day-name">${d.dayName}</div>
+      <div class="day-date">${d.dateStr}</div>
+      <div class="day-icon">${d.icon}</div>
+      <div class="day-temps"><span class="day-th">${d.tempH}°</span><span class="day-tl">${d.tempL}°</span></div>
+      <div class="day-meta">
+        <span class="day-rain" style="color:${d.rain>=60?'var(--red)':'var(--blue)'}">${d.rain}%</span>${d.windKph>=15?`<span class="day-wind" style="color:${d.windKph>=50?'var(--red)':d.windKph>=30?'var(--amber)':'var(--text-secondary)'}">🌬${d.windKph}</span>`:''}
+      </div>
+    </div>`).join('')}</div>`;
+  document.getElementById('week-grid-wrap').innerHTML = html;
+}
+
+async function selectDay(i) {
+  selectedDay = i;
+  renderWeekGrid();
+  const day = weatherDays[i];
+  const records = await loadRecords();
+  const { items, hint, svg } = getOutfit(day, records);
+  const feel = getFeel(day.tempH);
+  document.getElementById('detail-panel-wrap').innerHTML = `
+    <div class="card">
+      <h3>${day.dayName}（${day.dateStr}）の服装提案</h3>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span style="font-size:30px;">${day.icon}</span>
+        <div>
+          <div style="font-size:15px;font-weight:500;">${day.desc}</div>
+          <div style="font-size:13px;color:var(--text-secondary);">最高 ${day.tempH}° / 最低 ${day.tempL}° ・ 降水 ${day.rain}% ・ 風 ${day.windKph}km/h</div>
+          <div style="font-size:12px;color:${feel.color};margin-top:2px;">${feel.label}</div>
+        </div>
+      </div>
+      <details class="accordion">
+        <summary>天気の詳細 <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <div class="accordion-body">
+          ${[['気温（最高）',`${day.tempH}°C`],['気温（最低）',`${day.tempL}°C`],['降水確率',`${day.rain}%`],['最大風速',`${day.windKph}km/h　${day.windKph>=50?'非常に強い':day.windKph>=30?'強い':day.windKph>=15?'やや強い':'穏やか'}`],['天気',day.desc],['体感',feel.label]].map(([k,v])=>`<div class="detail-row"><span style="color:var(--text-secondary);">${k}</span><span style="font-weight:500;">${v}</span></div>`).join('')}
+        </div>
+      </details>
+      ${hint ? `<div class="ai-badge">✦ パーソナル調整済み</div><div class="hint-box">${hint}</div>` : ''}
+      <div class="outfit-body">
+        <div class="outfit-model">${svg}</div>
+        <div class="outfit-items">
+          ${items.map(it => `<div class="outfit-item"><div class="oi-icon">${it.i}</div><div><div class="oi-label">${it.l}</div>${it.s?`<div class="oi-sub">${it.s}</div>`:''}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  if (i <= 1) {
+    renderRecordInline();
+  } else {
+    document.getElementById('record-inline-wrap').innerHTML = '';
+    selectedFeel = null;
+    selectedTags = new Set();
+  }
+}
+
+function renderRecordInline() {
+  const cats = [...new Set(OUTFIT_TAGS.map(t => t.cat))];
+  const tagsHtml = cats.map(cat => `
+    <div class="tag-cat-label">${cat}</div>
+    <div class="tag-grid">
+      ${OUTFIT_TAGS.filter(t => t.cat === cat).map(t =>
+        `<button class="tag-btn" data-tag="${t.id}" onclick="toggleTag(this)">${t.label}</button>`
+      ).join('')}
+    </div>`).join('');
+  document.getElementById('record-inline-wrap').innerHTML = `
+    <div class="card" style="margin-top:1rem;">
+      <h3>${selectedDay === 0 ? '昨日' : '今日'}を記録</h3>
+      <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;margin-top:4px;">体感温度</label>
+      <div class="feel-selector">
+        <button class="feel-btn" data-feel="very_cold" onclick="selectFeel(this)">🥶 すごく寒い</button>
+        <button class="feel-btn" data-feel="cold" onclick="selectFeel(this)">🧥 寒い</button>
+        <button class="feel-btn" data-feel="just_right" onclick="selectFeel(this)">😊 ちょうどいい</button>
+        <button class="feel-btn" data-feel="warm" onclick="selectFeel(this)">😅 暑い</button>
+        <button class="feel-btn" data-feel="very_warm" onclick="selectFeel(this)">🥵 すごく暑い</button>
+      </div>
+      <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;margin-top:12px;">着ていた服装（複数選択可）</label>
+      ${tagsHtml}
+      <button class="save-btn" onclick="saveRecord()">記録を保存</button>
+      <div class="feedback" id="save-feedback">✓ 記録しました！服装提案の精度が上がります。</div>
+    </div>`;
+}
+
+function toggleTag(btn) {
+  const id = btn.dataset.tag;
+  if (selectedTags.has(id)) {
+    selectedTags.delete(id);
+    btn.classList.remove('selected');
+  } else {
+    selectedTags.add(id);
+    btn.classList.add('selected');
+  }
+}
+
+function switchTab(name) {
+  ['forecast','history'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((b, i) => {
+    b.classList.toggle('active', ['forecast','history'][i] === name);
+  });
+  if (name === 'history') renderHistory();
+}
+
+function selectFeel(btn) {
+  document.querySelectorAll('.feel-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedFeel = btn.dataset.feel;
+}
+
+
+async function saveRecord() {
+  if (!selectedFeel) { alert('体感温度を選んでください'); return; }
+  if (selectedTags.size === 0) { alert('着ていた服装を1つ以上選んでください'); return; }
+  const d = weatherDays[selectedDay] || {};
+  const _sd = d.date;
+  const recordDate = _sd
+    ? `${_sd.getFullYear()}-${String(_sd.getMonth()+1).padStart(2,'0')}-${String(_sd.getDate()).padStart(2,'0')}`
+    : new Date().toISOString().slice(0,10);
+  await insertRecord({
+    date: recordDate,
+    dateStr: d.dateStr || '',
+    weather: d.desc || '',
+    temp: d.tempH || 20,
+    feel: selectedFeel,
+    outfit: JSON.stringify([...selectedTags]),
+    loc: currentName,
+  });
+  selectedFeel = null;
+  selectedTags = new Set();
+  if (weatherDays.length) selectDay(selectedDay);
+  const fb = document.getElementById('save-feedback');
+  if (fb) {
+    fb.style.display = 'block';
+    setTimeout(() => { const el = document.getElementById('save-feedback'); if (el) el.style.display = 'none'; }, 3000);
+  }
+}
+
+async function loadRecords() {
+  if (USE_SUPABASE) {
+    try {
+      const { data, error } = await sb
+        .from('outfit_records')
+        .select('*')
+        .eq('device_id', getDeviceId())
+        .order('date', { ascending: false })
+        .limit(90);
+      if (error) throw error;
+      return (data || []).map(r => ({ ...r, dateStr: r.date_str }));
+    } catch {}
+  }
+  // フォールバック: localStorage
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+}
+
+async function insertRecord(record) {
+  if (USE_SUPABASE) {
+    try {
+      const { error } = await sb.from('outfit_records').insert({
+        device_id: getDeviceId(),
+        date: record.date,
+        date_str: record.dateStr || '',
+        weather: record.weather || '',
+        temp: record.temp || 20,
+        feel: record.feel,
+        outfit: record.outfit,
+        loc: record.loc || '',
+      });
+      if (!error) return;
+    } catch {}
+  }
+  // フォールバック: localStorage
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  records.unshift(record);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 90))); } catch {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 90)));
+  }
+}
+
+async function renderHistory() {
+  const records = await loadRecords();
+  document.getElementById('stat-records').textContent = records.length;
+  const ok = records.filter(r => r.feel === 'just_right').length;
+  document.getElementById('stat-comfort').textContent = records.length ? Math.round(ok/records.length*100)+'%' : '-';
+  let streak = 0;
+  const d = new Date();
+  for (const r of records) {
+    if (r.date === d.toISOString().slice(0,10)) { streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  document.getElementById('stat-streak').textContent = streak;
+  const feelLabels = { very_cold:'🥶 すごく寒い', cold:'🧥 寒い', just_right:'😊 ちょうどいい', warm:'😅 暑い', very_warm:'🥵 すごく暑い' };
+  const list = document.getElementById('history-list');
+  if (!records.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);">まだ記録がありません。</div>';
+    document.getElementById('ai-suggest-box').style.display = 'none';
+    return;
+  }
+  list.innerHTML = records.slice(0,15).map(r => `
+    <div class="hist-item">
+      <div style="min-width:70px;">
+        <div style="font-size:12px;color:var(--text-secondary);">${r.dateStr || r.date.slice(5)}</div>
+        <div style="font-size:11px;color:var(--text-secondary);">${r.temp}° ${r.weather}</div>
+        ${r.loc ? `<div style="font-size:10px;color:var(--text-secondary);">${r.loc.length>7?r.loc.slice(0,7)+'…':r.loc}</div>` : ''}
+      </div>
+      <div style="flex:1;">
+        <div class="hist-tag">${feelLabels[r.feel] || r.feel}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+          ${parseOutfitTags(r.outfit).map(id => {
+            const t = OUTFIT_TAGS.find(x => x.id === id);
+            return t ? `<span style="font-size:11px;background:var(--bg-secondary);border-radius:10px;padding:2px 8px;">${t.label}</span>` : '';
+          }).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+  if (records.length >= 3) {
+    document.getElementById('ai-suggest-box').style.display = '';
+    const cold = records.filter(r => ['cold','very_cold'].includes(r.feel)).length;
+    const warm = records.filter(r => ['warm','very_warm'].includes(r.feel)).length;
+    let text;
+    if (cold > warm * 1.5) text = '寒がりな傾向があります。天気予報の気温より1段階厚めの服装が快適です。特に朝晩の防寒を意識しましょう。';
+    else if (warm > cold * 1.5) text = '暑がりな傾向があります。薄着気味でも快適に過ごせます。通気性の良い素材を選ぶと良いでしょう。';
+    else text = `快適率 ${Math.round(ok/records.length*100)}%。記録が増えるほど、あなたの体感に合わせた精度の高い服装提案ができます！`;
+    document.getElementById('ai-suggest-text').textContent = text;
+  }
+}
+
+
+initAuth().then(() => fetchWeather());
+</script>
+</body>
+</html>
