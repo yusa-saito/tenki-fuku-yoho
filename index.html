@@ -238,6 +238,10 @@ function getDeviceId() {
 }
 // ========================
 
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 const STORAGE_KEY = 'weather_outfit_v3';
 const WEATHER_CACHE_KEY = 'weather_cache_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30分
@@ -914,23 +918,29 @@ async function renderHistory() {
     document.getElementById('ai-suggest-box').style.display = 'none';
     return;
   }
-  list.innerHTML = records.slice(0,15).map(r => `
+  list.innerHTML = records.slice(0,15).map(r => {
+    const dateStr = escapeHtml(r.dateStr || r.date.slice(5));
+    const temp    = escapeHtml(r.temp);
+    const weather = escapeHtml(r.weather);
+    const loc     = r.loc ? escapeHtml(r.loc.length > 7 ? r.loc.slice(0,7)+'…' : r.loc) : '';
+    const feel    = escapeHtml(feelLabels[r.feel] || r.feel);
+    const tags    = parseOutfitTags(r.outfit).map(id => {
+      const t = OUTFIT_TAGS.find(x => x.id === id);
+      return t ? `<span style="font-size:11px;background:var(--bg-secondary);border-radius:10px;padding:2px 8px;">${escapeHtml(t.label)}</span>` : '';
+    }).join('');
+    return `
     <div class="hist-item">
       <div style="min-width:70px;">
-        <div style="font-size:12px;color:var(--text-secondary);">${r.dateStr || r.date.slice(5)}</div>
-        <div style="font-size:11px;color:var(--text-secondary);">${r.temp}° ${r.weather}</div>
-        ${r.loc ? `<div style="font-size:10px;color:var(--text-secondary);">${r.loc.length>7?r.loc.slice(0,7)+'…':r.loc}</div>` : ''}
+        <div style="font-size:12px;color:var(--text-secondary);">${dateStr}</div>
+        <div style="font-size:11px;color:var(--text-secondary);">${temp}° ${weather}</div>
+        ${loc ? `<div style="font-size:10px;color:var(--text-secondary);">${loc}</div>` : ''}
       </div>
       <div style="flex:1;">
-        <div class="hist-tag">${feelLabels[r.feel] || r.feel}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
-          ${parseOutfitTags(r.outfit).map(id => {
-            const t = OUTFIT_TAGS.find(x => x.id === id);
-            return t ? `<span style="font-size:11px;background:var(--bg-secondary);border-radius:10px;padding:2px 8px;">${t.label}</span>` : '';
-          }).join('')}
-        </div>
+        <div class="hist-tag">${feel}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">${tags}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   if (records.length >= 3) {
     document.getElementById('ai-suggest-box').style.display = '';
     const cold = records.filter(r => ['cold','very_cold'].includes(r.feel)).length;
