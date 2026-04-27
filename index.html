@@ -50,31 +50,33 @@
 
   /* Location bar */
   .location-bar { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 1.25rem; }
-  .location-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .loc-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
-  .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 320px; }
-  .loc-search { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 6px 10px; font-size: 13px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; }
+  .loc-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .loc-tab { padding: 5px 14px; border-radius: 20px; border: 0.5px solid var(--border); background: transparent; font-size: 13px; color: var(--text-secondary); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .loc-tab.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+  .loc-panel { display: none; }
+  .loc-panel.active { display: block; }
+  .loc-select { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 8px 10px; font-size: 16px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+  .loc-select:focus { outline: none; border-color: var(--border-hover); }
+  .location-row { display: flex; align-items: center; gap: 8px; }
+  .search-wrap { position: relative; flex: 1; }
+  .loc-search { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 8px 10px; font-size: 16px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; }
   .loc-search:focus { outline: none; border-color: var(--border-hover); }
   .search-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); z-index: 100; max-height: 240px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
-  .suggestion-item { padding: 8px 12px; cursor: pointer; border-bottom: 0.5px solid var(--border); }
+  .suggestion-item { padding: 10px 12px; cursor: pointer; border-bottom: 0.5px solid var(--border); }
   .suggestion-item:last-child { border-bottom: none; }
   .suggestion-item:hover { background: var(--bg-secondary); }
-  .suggestion-name { font-size: 13px; display: block; }
-  .suggestion-sub { font-size: 11px; color: var(--text-secondary); }
-  .gps-btn { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border); background: transparent; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit; }
+  .suggestion-name { font-size: 14px; display: block; }
+  .suggestion-sub { font-size: 12px; color: var(--text-secondary); }
+  .gps-btn { display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border); background: transparent; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit; }
   .gps-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
   .gps-btn.active { background: var(--blue-bg); color: var(--blue-mid); border-color: var(--blue); }
-  .current-loc { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-left: auto; }
+  .current-loc { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-top: 8px; }
 
   /* Header */
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
   .header h1 { font-size: 20px; font-weight: 500; }
   .header-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
 
-  /* Tabs */
-  .tab-bar { display: flex; gap: 8px; margin-bottom: 1.25rem; }
-  .tab { padding: 7px 18px; border-radius: 20px; border: 0.5px solid var(--border); font-size: 13px; cursor: pointer; background: transparent; color: var(--text-secondary); font-family: inherit; transition: all 0.12s; }
-  .tab.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
 
   /* Week grid */
   .week-grid-scroll { overflow-x: auto; margin-bottom: 1.25rem; -webkit-overflow-scrolling: touch; }
@@ -151,7 +153,6 @@
 
   @media (max-width: 620px) {
     .detail-panel { grid-template-columns: 1fr; }
-    .current-loc { display: none; }
   }
 </style>
 </head>
@@ -160,18 +161,91 @@
 
   <!-- Location bar -->
   <div class="location-bar">
-    <div class="location-row">
-      <span class="loc-label">📍 場所：</span>
-      <div class="search-wrap">
-        <input type="text" class="loc-search" id="loc-search" placeholder="都市名を検索（例: 東京、Paris、New York）" autocomplete="off" oninput="onSearchInput(this.value)" onblur="hideSearchSuggestions()">
-        <div class="search-suggestions" id="search-suggestions" style="display:none"></div>
-      </div>
-      <button class="gps-btn" id="gps-btn" onclick="useGPS()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg>
-        現在地を使用
-      </button>
-      <span class="current-loc" id="current-loc-label">東京都 東京</span>
+    <div class="loc-tabs">
+      <button class="loc-tab active" id="tab-japan" onclick="switchLocTab('japan')">🇯🇵 日本</button>
+      <button class="loc-tab" id="tab-world" onclick="switchLocTab('world')">🌍 海外</button>
     </div>
+    <!-- 日本：都道府県ドロップダウン -->
+    <div class="loc-panel active" id="panel-japan">
+      <div class="location-row">
+        <select class="loc-select" id="pref-select" onchange="selectPref(this.value)">
+          <option value="">都道府県を選択...</option>
+          <optgroup label="北海道・東北">
+            <option value="43.06,141.35,北海道">北海道</option>
+            <option value="40.82,140.74,青森県">青森県</option>
+            <option value="39.70,141.15,岩手県">岩手県</option>
+            <option value="38.27,140.87,宮城県">宮城県</option>
+            <option value="39.72,140.10,秋田県">秋田県</option>
+            <option value="38.24,140.36,山形県">山形県</option>
+            <option value="37.75,140.47,福島県">福島県</option>
+          </optgroup>
+          <optgroup label="関東">
+            <option value="36.39,140.47,茨城県">茨城県</option>
+            <option value="36.57,139.88,栃木県">栃木県</option>
+            <option value="36.39,139.06,群馬県">群馬県</option>
+            <option value="35.86,139.65,埼玉県">埼玉県</option>
+            <option value="35.61,140.12,千葉県">千葉県</option>
+            <option value="35.69,139.69,東京都" selected>東京都</option>
+            <option value="35.45,139.64,神奈川県">神奈川県</option>
+          </optgroup>
+          <optgroup label="中部">
+            <option value="37.90,139.02,新潟県">新潟県</option>
+            <option value="36.70,137.21,富山県">富山県</option>
+            <option value="36.59,136.63,石川県">石川県</option>
+            <option value="36.07,136.22,福井県">福井県</option>
+            <option value="35.66,138.57,山梨県">山梨県</option>
+            <option value="36.65,138.18,長野県">長野県</option>
+            <option value="35.39,136.72,岐阜県">岐阜県</option>
+            <option value="34.98,138.38,静岡県">静岡県</option>
+            <option value="35.18,136.91,愛知県">愛知県</option>
+          </optgroup>
+          <optgroup label="近畿">
+            <option value="34.73,136.51,三重県">三重県</option>
+            <option value="35.00,135.87,滋賀県">滋賀県</option>
+            <option value="35.02,135.76,京都府">京都府</option>
+            <option value="34.69,135.50,大阪府">大阪府</option>
+            <option value="34.69,135.20,兵庫県">兵庫県</option>
+            <option value="34.69,135.83,奈良県">奈良県</option>
+            <option value="34.23,135.17,和歌山県">和歌山県</option>
+          </optgroup>
+          <optgroup label="中国・四国">
+            <option value="35.50,134.24,鳥取県">鳥取県</option>
+            <option value="35.47,133.05,島根県">島根県</option>
+            <option value="34.66,133.93,岡山県">岡山県</option>
+            <option value="34.40,132.46,広島県">広島県</option>
+            <option value="34.19,131.47,山口県">山口県</option>
+            <option value="34.07,134.56,徳島県">徳島県</option>
+            <option value="34.34,134.04,香川県">香川県</option>
+            <option value="33.84,132.77,愛媛県">愛媛県</option>
+            <option value="33.56,133.53,高知県">高知県</option>
+          </optgroup>
+          <optgroup label="九州・沖縄">
+            <option value="33.61,130.42,福岡県">福岡県</option>
+            <option value="33.24,129.88,佐賀県">佐賀県</option>
+            <option value="32.74,129.87,長崎県">長崎県</option>
+            <option value="32.79,130.74,熊本県">熊本県</option>
+            <option value="33.24,131.61,大分県">大分県</option>
+            <option value="31.91,131.42,宮崎県">宮崎県</option>
+            <option value="31.56,130.56,鹿児島県">鹿児島県</option>
+            <option value="26.21,127.68,沖縄県">沖縄県</option>
+          </optgroup>
+        </select>
+        <button class="gps-btn" id="gps-btn" onclick="useGPS()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg>
+          現在地
+        </button>
+      </div>
+    </div>
+    <!-- 海外：テキスト検索 -->
+    <div class="loc-panel" id="panel-world">
+      <div class="location-row">
+        <div class="search-wrap">
+          <input type="text" class="loc-search" id="loc-search" placeholder="都市名を入力（例: Paris, New York）" autocomplete="off" oninput="onSearchInput(this.value)" onblur="hideSearchSuggestions()">
+          <div class="search-suggestions" id="search-suggestions" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+    <div class="current-loc" id="current-loc-label">📍 東京都</div>
   </div>
 
   <!-- Header -->
@@ -182,37 +256,9 @@
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tab-bar">
-    <button class="tab active" onclick="switchTab('forecast')">予報</button>
-    <button class="tab" onclick="switchTab('history')">記録履歴</button>
-  </div>
-
-  <!-- Forecast tab -->
-  <div id="tab-forecast">
-    <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
-    <div id="detail-panel-wrap"></div>
-    <div id="record-inline-wrap"></div>
-  </div>
-
-  <!-- History tab -->
-  <div id="tab-history" style="display:none">
-    <div class="card" style="margin-bottom:1rem;">
-      <div class="stats-row">
-        <div class="stat-box"><div class="stat-num" id="stat-records">0</div><div class="stat-lbl">記録数</div></div>
-        <div class="stat-box"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">連続記録日</div></div>
-        <div class="stat-box"><div class="stat-num" id="stat-comfort">-</div><div class="stat-lbl">快適率</div></div>
-      </div>
-      <div id="ai-suggest-box" style="display:none">
-        <div class="ai-badge">✦ AIパーソナル提案</div>
-        <div class="suggest-box" id="ai-suggest-text"></div>
-      </div>
-    </div>
-    <div class="card">
-      <h3>過去の記録</h3>
-      <div id="history-list"><div style="font-size:13px;color:var(--text-secondary);">まだ記録がありません。</div></div>
-    </div>
-  </div>
+  <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
+  <div id="detail-panel-wrap"></div>
+  <div id="record-inline-wrap"></div>
 
 </div>
 
@@ -277,6 +323,20 @@ let currentLat = 35.6895, currentLon = 139.6917, currentName = '東京都 東京
 
 let searchTimer = null;
 
+function switchLocTab(tab) {
+  document.getElementById('panel-japan').classList.toggle('active', tab === 'japan');
+  document.getElementById('panel-world').classList.toggle('active', tab === 'world');
+  document.getElementById('tab-japan').classList.toggle('active', tab === 'japan');
+  document.getElementById('tab-world').classList.toggle('active', tab === 'world');
+  document.getElementById('gps-btn').classList.remove('active');
+}
+
+function selectPref(val) {
+  if (!val) return;
+  const [lat, lon, name] = val.split(',');
+  selectCity(Number(lat), Number(lon), name);
+}
+
 function onSearchInput(val) {
   clearTimeout(searchTimer);
   const box = document.getElementById('search-suggestions');
@@ -316,9 +376,11 @@ async function searchCities(query) {
 
 function selectCity(lat, lon, name) {
   currentLat = lat; currentLon = lon; currentName = name;
-  document.getElementById('loc-search').value = name;
-  document.getElementById('search-suggestions').style.display = 'none';
-  document.getElementById('current-loc-label').textContent = name;
+  const locSearch = document.getElementById('loc-search');
+  if (locSearch) locSearch.value = name;
+  const sugg = document.getElementById('search-suggestions');
+  if (sugg) sugg.style.display = 'none';
+  document.getElementById('current-loc-label').textContent = '📍 ' + name;
   document.getElementById('gps-btn').classList.remove('active');
   fetchWeather();
 }
@@ -340,7 +402,7 @@ function useGPS() {
     btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg> 現在地を使用`;
     btn.classList.add('active');
     currentName = `現在地 (${currentLat.toFixed(2)}, ${currentLon.toFixed(2)})`;
-    document.getElementById('current-loc-label').textContent = currentName;
+    document.getElementById('current-loc-label').textContent = '📍 ' + currentName;
     fetchWeather();
   }, () => {
     btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg> 現在地を使用`;
@@ -778,7 +840,9 @@ async function selectDay(i) {
       </div>
     </div>`;
   if (i <= 1) {
-    renderRecordInline();
+    const dateKey = day.date ? `${day.date.getFullYear()}-${String(day.date.getMonth()+1).padStart(2,'0')}-${String(day.date.getDate()).padStart(2,'0')}` : '';
+    const existing = records.find(r => r.date === dateKey) || null;
+    renderRecordInline(existing);
   } else {
     document.getElementById('record-inline-wrap').innerHTML = '';
     selectedFeel = null;
@@ -786,7 +850,9 @@ async function selectDay(i) {
   }
 }
 
-function renderRecordInline() {
+function renderRecordInline(existing) {
+  selectedFeel = existing ? existing.feel : null;
+  selectedTags = existing ? new Set(parseOutfitTags(existing.outfit)) : new Set();
   const cats = [...new Set(OUTFIT_TAGS.map(t => t.cat))];
   const tagsHtml = cats.map(cat => `
     <div class="tag-cat-label">${cat}</div>
@@ -811,6 +877,14 @@ function renderRecordInline() {
       <button class="save-btn" onclick="saveRecord()">記録を保存</button>
       <div class="feedback" id="save-feedback">✓ 記録しました！服装提案の精度が上がります。</div>
     </div>`;
+  if (selectedFeel) {
+    const btn = document.querySelector(`.feel-btn[data-feel="${selectedFeel}"]`);
+    if (btn) btn.classList.add('selected');
+  }
+  selectedTags.forEach(id => {
+    const btn = document.querySelector(`.tag-btn[data-tag="${id}"]`);
+    if (btn) btn.classList.add('selected');
+  });
 }
 
 function toggleTag(btn) {
@@ -824,15 +898,6 @@ function toggleTag(btn) {
   }
 }
 
-function switchTab(name) {
-  ['forecast','history'].forEach(t => {
-    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
-  });
-  document.querySelectorAll('.tab').forEach((b, i) => {
-    b.classList.toggle('active', ['forecast','history'][i] === name);
-  });
-  if (name === 'history') renderHistory();
-}
 
 function selectFeel(btn) {
   document.querySelectorAll('.feel-btn').forEach(b => b.classList.remove('selected'));
@@ -849,7 +914,7 @@ async function saveRecord() {
   const recordDate = _sd
     ? `${_sd.getFullYear()}-${String(_sd.getMonth()+1).padStart(2,'0')}-${String(_sd.getDate()).padStart(2,'0')}`
     : new Date().toISOString().slice(0,10);
-  await insertRecord({
+  await upsertRecord({
     date: recordDate,
     dateStr: d.dateStr || '',
     weather: d.desc || '',
@@ -858,9 +923,6 @@ async function saveRecord() {
     outfit: JSON.stringify([...selectedTags]),
     loc: currentName,
   });
-  selectedFeel = null;
-  selectedTags = new Set();
-  if (weatherDays.length) selectDay(selectedDay);
   const fb = document.getElementById('save-feedback');
   if (fb) {
     fb.style.display = 'block';
@@ -885,11 +947,12 @@ async function loadRecords() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 }
 
-async function insertRecord(record) {
+async function upsertRecord(record) {
   if (USE_SUPABASE) {
     try {
-      const { error } = await sb.from('outfit_records').insert({
-        device_id: getDeviceId(),
+      const devId = getDeviceId();
+      const payload = {
+        device_id: devId,
         date: record.date,
         date_str: record.dateStr || '',
         weather: record.weather || '',
@@ -897,70 +960,25 @@ async function insertRecord(record) {
         feel: record.feel,
         outfit: record.outfit,
         loc: record.loc || '',
-      });
-      if (!error) return;
+      };
+      const { data: existing } = await sb.from('outfit_records')
+        .select('id').eq('device_id', devId).eq('date', record.date).maybeSingle();
+      if (existing) {
+        const { error } = await sb.from('outfit_records').update(payload).eq('id', existing.id);
+        if (!error) return;
+      } else {
+        const { error } = await sb.from('outfit_records').insert(payload);
+        if (!error) return;
+      }
     } catch {}
   }
   // フォールバック: localStorage
   const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  records.unshift(record);
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 90))); } catch {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 90)));
-  }
+  const filtered = records.filter(r => r.date !== record.date);
+  filtered.unshift(record);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.slice(0, 90))); } catch {}
 }
 
-async function renderHistory() {
-  const records = await loadRecords();
-  document.getElementById('stat-records').textContent = records.length;
-  const ok = records.filter(r => r.feel === 'just_right').length;
-  document.getElementById('stat-comfort').textContent = records.length ? Math.round(ok/records.length*100)+'%' : '-';
-  let streak = 0;
-  const d = new Date();
-  for (const r of records) {
-    if (r.date === d.toISOString().slice(0,10)) { streak++; d.setDate(d.getDate()-1); } else break;
-  }
-  document.getElementById('stat-streak').textContent = streak;
-  const feelLabels = { very_cold:'🥶 すごく寒い', cold:'🧥 寒い', just_right:'😊 ちょうどいい', warm:'😅 暑い', very_warm:'🥵 すごく暑い' };
-  const list = document.getElementById('history-list');
-  if (!records.length) {
-    list.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);">まだ記録がありません。</div>';
-    document.getElementById('ai-suggest-box').style.display = 'none';
-    return;
-  }
-  list.innerHTML = records.slice(0,15).map(r => {
-    const dateStr = escapeHtml(r.dateStr || r.date.slice(5));
-    const temp    = escapeHtml(r.temp);
-    const weather = escapeHtml(r.weather);
-    const loc     = r.loc ? escapeHtml(r.loc.length > 7 ? r.loc.slice(0,7)+'…' : r.loc) : '';
-    const feel    = escapeHtml(feelLabels[r.feel] || r.feel);
-    const tags    = parseOutfitTags(r.outfit).map(id => {
-      const t = OUTFIT_TAGS.find(x => x.id === id);
-      return t ? `<span style="font-size:11px;background:var(--bg-secondary);border-radius:10px;padding:2px 8px;">${escapeHtml(t.label)}</span>` : '';
-    }).join('');
-    return `
-    <div class="hist-item">
-      <div style="min-width:70px;">
-        <div style="font-size:12px;color:var(--text-secondary);">${dateStr}</div>
-        <div style="font-size:11px;color:var(--text-secondary);">${temp}° ${weather}</div>
-        ${loc ? `<div style="font-size:10px;color:var(--text-secondary);">${loc}</div>` : ''}
-      </div>
-      <div style="flex:1;">
-        <div class="hist-tag">${feel}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">${tags}</div>
-      </div>
-    </div>`;
-  }).join('');
-  if (records.length >= 3) {
-    document.getElementById('ai-suggest-box').style.display = '';
-    const cold = records.filter(r => ['cold','very_cold'].includes(r.feel)).length;
-    const warm = records.filter(r => ['warm','very_warm'].includes(r.feel)).length;
-    let text;
-    if (cold > warm * 1.5) text = '寒がりな傾向があります。天気予報の気温より1段階厚めの服装が快適です。特に朝晩の防寒を意識しましょう。';
-    else if (warm > cold * 1.5) text = '暑がりな傾向があります。薄着気味でも快適に過ごせます。通気性の良い素材を選ぶと良いでしょう。';
-    else text = `快適率 ${Math.round(ok/records.length*100)}%。記録が増えるほど、あなたの体感に合わせた精度の高い服装提案ができます！`;
-    document.getElementById('ai-suggest-text').textContent = text;
-  }
-}
 
 
 initAuth().then(() => fetchWeather());

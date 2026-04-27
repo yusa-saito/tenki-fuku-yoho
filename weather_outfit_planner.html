@@ -778,7 +778,9 @@ async function selectDay(i) {
       </div>
     </div>`;
   if (i <= 1) {
-    renderRecordInline();
+    const dateKey = day.date ? `${day.date.getFullYear()}-${String(day.date.getMonth()+1).padStart(2,'0')}-${String(day.date.getDate()).padStart(2,'0')}` : '';
+    const existing = records.find(r => r.date === dateKey) || null;
+    renderRecordInline(existing);
   } else {
     document.getElementById('record-inline-wrap').innerHTML = '';
     selectedFeel = null;
@@ -786,7 +788,9 @@ async function selectDay(i) {
   }
 }
 
-function renderRecordInline() {
+function renderRecordInline(existing) {
+  selectedFeel = existing ? existing.feel : null;
+  selectedTags = existing ? new Set(parseOutfitTags(existing.outfit)) : new Set();
   const cats = [...new Set(OUTFIT_TAGS.map(t => t.cat))];
   const tagsHtml = cats.map(cat => `
     <div class="tag-cat-label">${cat}</div>
@@ -811,6 +815,14 @@ function renderRecordInline() {
       <button class="save-btn" onclick="saveRecord()">記録を保存</button>
       <div class="feedback" id="save-feedback">✓ 記録しました！服装提案の精度が上がります。</div>
     </div>`;
+  if (selectedFeel) {
+    const btn = document.querySelector(`.feel-btn[data-feel="${selectedFeel}"]`);
+    if (btn) btn.classList.add('selected');
+  }
+  selectedTags.forEach(id => {
+    const btn = document.querySelector(`.tag-btn[data-tag="${id}"]`);
+    if (btn) btn.classList.add('selected');
+  });
 }
 
 function toggleTag(btn) {
@@ -824,15 +836,6 @@ function toggleTag(btn) {
   }
 }
 
-function switchTab(name) {
-  ['forecast','history'].forEach(t => {
-    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
-  });
-  document.querySelectorAll('.tab').forEach((b, i) => {
-    b.classList.toggle('active', ['forecast','history'][i] === name);
-  });
-  if (name === 'history') renderHistory();
-}
 
 function selectFeel(btn) {
   document.querySelectorAll('.feel-btn').forEach(b => b.classList.remove('selected'));
@@ -849,7 +852,7 @@ async function saveRecord() {
   const recordDate = _sd
     ? `${_sd.getFullYear()}-${String(_sd.getMonth()+1).padStart(2,'0')}-${String(_sd.getDate()).padStart(2,'0')}`
     : new Date().toISOString().slice(0,10);
-  await insertRecord({
+  await upsertRecord({
     date: recordDate,
     dateStr: d.dateStr || '',
     weather: d.desc || '',
@@ -858,9 +861,6 @@ async function saveRecord() {
     outfit: JSON.stringify([...selectedTags]),
     loc: currentName,
   });
-  selectedFeel = null;
-  selectedTags = new Set();
-  if (weatherDays.length) selectDay(selectedDay);
   const fb = document.getElementById('save-feedback');
   if (fb) {
     fb.style.display = 'block';
@@ -885,11 +885,12 @@ async function loadRecords() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 }
 
-async function insertRecord(record) {
+async function upsertRecord(record) {
   if (USE_SUPABASE) {
     try {
-      const { error } = await sb.from('outfit_records').insert({
-        device_id: getDeviceId(),
+      const devId = getDeviceId();
+      const payload = {
+        device_id: devId,
         date: record.date,
         date_str: record.dateStr || '',
         weather: record.weather || '',
@@ -897,70 +898,25 @@ async function insertRecord(record) {
         feel: record.feel,
         outfit: record.outfit,
         loc: record.loc || '',
-      });
-      if (!error) return;
+      };
+      const { data: existing } = await sb.from('outfit_records')
+        .select('id').eq('device_id', devId).eq('date', record.date).maybeSingle();
+      if (existing) {
+        const { error } = await sb.from('outfit_records').update(payload).eq('id', existing.id);
+        if (!error) return;
+      } else {
+        const { error } = await sb.from('outfit_records').insert(payload);
+        if (!error) return;
+      }
     } catch {}
   }
   // フォールバック: localStorage
   const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  records.unshift(record);
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 90))); } catch {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 90)));
-  }
+  const filtered = records.filter(r => r.date !== record.date);
+  filtered.unshift(record);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.slice(0, 90))); } catch {}
 }
 
-async function renderHistory() {
-  const records = await loadRecords();
-  document.getElementById('stat-records').textContent = records.length;
-  const ok = records.filter(r => r.feel === 'just_right').length;
-  document.getElementById('stat-comfort').textContent = records.length ? Math.round(ok/records.length*100)+'%' : '-';
-  let streak = 0;
-  const d = new Date();
-  for (const r of records) {
-    if (r.date === d.toISOString().slice(0,10)) { streak++; d.setDate(d.getDate()-1); } else break;
-  }
-  document.getElementById('stat-streak').textContent = streak;
-  const feelLabels = { very_cold:'🥶 すごく寒い', cold:'🧥 寒い', just_right:'😊 ちょうどいい', warm:'😅 暑い', very_warm:'🥵 すごく暑い' };
-  const list = document.getElementById('history-list');
-  if (!records.length) {
-    list.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);">まだ記録がありません。</div>';
-    document.getElementById('ai-suggest-box').style.display = 'none';
-    return;
-  }
-  list.innerHTML = records.slice(0,15).map(r => {
-    const dateStr = escapeHtml(r.dateStr || r.date.slice(5));
-    const temp    = escapeHtml(r.temp);
-    const weather = escapeHtml(r.weather);
-    const loc     = r.loc ? escapeHtml(r.loc.length > 7 ? r.loc.slice(0,7)+'…' : r.loc) : '';
-    const feel    = escapeHtml(feelLabels[r.feel] || r.feel);
-    const tags    = parseOutfitTags(r.outfit).map(id => {
-      const t = OUTFIT_TAGS.find(x => x.id === id);
-      return t ? `<span style="font-size:11px;background:var(--bg-secondary);border-radius:10px;padding:2px 8px;">${escapeHtml(t.label)}</span>` : '';
-    }).join('');
-    return `
-    <div class="hist-item">
-      <div style="min-width:70px;">
-        <div style="font-size:12px;color:var(--text-secondary);">${dateStr}</div>
-        <div style="font-size:11px;color:var(--text-secondary);">${temp}° ${weather}</div>
-        ${loc ? `<div style="font-size:10px;color:var(--text-secondary);">${loc}</div>` : ''}
-      </div>
-      <div style="flex:1;">
-        <div class="hist-tag">${feel}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">${tags}</div>
-      </div>
-    </div>`;
-  }).join('');
-  if (records.length >= 3) {
-    document.getElementById('ai-suggest-box').style.display = '';
-    const cold = records.filter(r => ['cold','very_cold'].includes(r.feel)).length;
-    const warm = records.filter(r => ['warm','very_warm'].includes(r.feel)).length;
-    let text;
-    if (cold > warm * 1.5) text = '寒がりな傾向があります。天気予報の気温より1段階厚めの服装が快適です。特に朝晩の防寒を意識しましょう。';
-    else if (warm > cold * 1.5) text = '暑がりな傾向があります。薄着気味でも快適に過ごせます。通気性の良い素材を選ぶと良いでしょう。';
-    else text = `快適率 ${Math.round(ok/records.length*100)}%。記録が増えるほど、あなたの体感に合わせた精度の高い服装提案ができます！`;
-    document.getElementById('ai-suggest-text').textContent = text;
-  }
-}
 
 
 initAuth().then(() => fetchWeather());
