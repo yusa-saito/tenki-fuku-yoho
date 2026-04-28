@@ -119,6 +119,22 @@
   .ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--blue-mid); background: var(--blue-bg); padding: 2px 8px; border-radius: 10px; margin-bottom: 8px; }
   .tip-box { margin-top: 12px; padding: 10px; background: var(--bg-secondary); border-radius: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
 
+  /* Weather hero */
+  .detail-card-wrap { border-radius: var(--radius-lg); overflow: hidden; border: 0.5px solid var(--border); margin-bottom: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  .weather-hero { padding: 20px 18px 18px; color: white; position: relative; overflow: hidden; min-height: 120px; }
+  .weather-hero-graphic { position: absolute; right: -10px; top: 50%; transform: translateY(-50%); opacity: 0.22; z-index: 0; pointer-events: none; }
+  .weather-hero-content { position: relative; z-index: 1; }
+  .hero-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .hero-temp { font-size: 48px; font-weight: 300; line-height: 1; }
+  .hero-desc { font-size: 14px; margin-top: 5px; opacity: 0.9; }
+  .hero-right { text-align: right; }
+  .hero-date { font-size: 12px; opacity: 0.8; }
+  .hero-loc { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  .hero-meta-row { display: flex; gap: 20px; margin-top: 14px; }
+  .hero-meta-item { font-size: 12px; opacity: 0.85; }
+  .hero-meta-label { font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .detail-card-body { background: var(--bg-primary); padding: 1.25rem; }
+
   /* Record tab */
   .feel-selector { display: flex; gap: 6px; margin-bottom: 12px; }
   .feel-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 2px; border-radius: 8px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; transition: all 0.12s; min-width: 0; }
@@ -549,6 +565,32 @@ function useGPS() {
   });
 }
 
+const SNOW_CODES = new Set([71,73,75,77,85,86]);
+const CLOUDY_CODES = new Set([3,45,48]);
+
+const HERO_GRAPHIC_CIRCLE = `<svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg"><circle cx="65" cy="65" r="60" fill="white"/></svg>`;
+const HERO_GRAPHIC_CLOUDY = `<svg width="130" height="110" viewBox="0 0 130 110" xmlns="http://www.w3.org/2000/svg"><path d="M-10 30 Q12 10 35 30 Q58 50 80 30 Q102 10 125 30 L125 55 Q102 35 80 55 Q58 75 35 55 Q12 35 -10 55 Z" fill="white"/><path d="M-10 65 Q12 45 35 65 Q58 85 80 65 Q102 45 125 65 L125 90 Q102 70 80 90 Q58 110 35 90 Q12 70 -10 90 Z" fill="white"/></svg>`;
+const HERO_GRAPHIC_RAINY  = `<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect x="4"  y="0" width="7" height="120" rx="3.5" fill="white"/><rect x="20" y="0" width="7" height="120" rx="3.5" fill="white"/><rect x="36" y="0" width="7" height="120" rx="3.5" fill="white"/><rect x="52" y="0" width="7" height="120" rx="3.5" fill="white"/><rect x="68" y="0" width="7" height="120" rx="3.5" fill="white"/><rect x="84" y="0" width="7" height="120" rx="3.5" fill="white"/><rect x="100" y="0" width="7" height="120" rx="3.5" fill="white"/></svg>`;
+const HERO_GRAPHIC_SNOWY  = `<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><circle cx="15" cy="15" r="7" fill="white"/><circle cx="45" cy="15" r="7" fill="white"/><circle cx="75" cy="15" r="7" fill="white"/><circle cx="105" cy="15" r="7" fill="white"/><circle cx="15" cy="45" r="7" fill="white"/><circle cx="45" cy="45" r="7" fill="white"/><circle cx="75" cy="45" r="7" fill="white"/><circle cx="105" cy="45" r="7" fill="white"/><circle cx="15" cy="75" r="7" fill="white"/><circle cx="45" cy="75" r="7" fill="white"/><circle cx="75" cy="75" r="7" fill="white"/><circle cx="105" cy="75" r="7" fill="white"/><circle cx="15" cy="105" r="7" fill="white"/><circle cx="45" cy="105" r="7" fill="white"/><circle cx="75" cy="105" r="7" fill="white"/><circle cx="105" cy="105" r="7" fill="white"/></svg>`;
+
+function getHeroColor(tempH, wmoCode) {
+  if (SNOW_CODES.has(wmoCode)) return '#80aadc';
+  if (RAIN_CODES.has(wmoCode)) return '#5c7a8a';
+  if (CLOUDY_CODES.has(wmoCode)) return '#8fa5b0';
+  if (tempH >= 35) return '#e8522a';
+  if (tempH >= 28) return '#f0952a';
+  if (tempH >= 18) return '#5ab4f0';
+  if (tempH >= 10) return '#74aee0';
+  return '#7070c0';
+}
+
+function getHeroGraphic(wmoCode) {
+  if (SNOW_CODES.has(wmoCode)) return HERO_GRAPHIC_SNOWY;
+  if (RAIN_CODES.has(wmoCode)) return HERO_GRAPHIC_RAINY;
+  if (CLOUDY_CODES.has(wmoCode)) return HERO_GRAPHIC_CLOUDY;
+  return HERO_GRAPHIC_CIRCLE;
+}
+
 const WMO_ICONS = {0:'☀',1:'🌤',2:'⛅',3:'🌥',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',77:'🌨',80:'🌦',81:'🌧',82:'⛈',85:'🌨',86:'🌨',95:'⛈',96:'⛈',99:'⛈'};
 const WMO_DESC = {0:'快晴',1:'ほぼ晴れ',2:'晴れ時々曇り',3:'曇り',45:'霧',48:'霧',51:'小雨',53:'雨',55:'雨',61:'小雨',63:'雨',65:'大雨',71:'小雪',73:'雪',75:'大雪',77:'霰',80:'にわか雨',81:'雨',82:'強い雨',85:'にわか雪',86:'にわか雪',95:'雷雨',96:'雷雨',99:'激しい雷雨'};
 const RAIN_CODES = new Set([51,53,55,61,63,65,80,81,82,95,96,99]);
@@ -772,6 +814,7 @@ function parseWeatherData(data) {
       date: dt,
       dateStr: `${dt.getMonth()+1}/${dt.getDate()}`,
       dayName: i === 0 ? '昨日' : i === 1 ? '今日' : i === 2 ? '明日' : days[dt.getDay()],
+      wmoCode: code,
       icon: WMO_ICONS[code] || '🌡',
       desc: WMO_DESC[code] || '不明',
       tempH: Math.round(d.temperature_2m_max[i]),
@@ -953,28 +996,43 @@ async function selectDay(i) {
   const records = await loadRecords();
   const { items, hint, svg } = getOutfit(day, records);
   const feel = getFeel(day.tempH);
+  const heroColor = getHeroColor(day.tempH, day.wmoCode);
+  const heroGraphic = getHeroGraphic(day.wmoCode);
   document.getElementById('detail-panel-wrap').innerHTML = `
-    <div class="card">
-      <h3>${day.dayName}（${day.dateStr}）の服装提案</h3>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-        <span style="font-size:30px;">${day.icon}</span>
-        <div>
-          <div style="font-size:15px;font-weight:500;">${day.desc}</div>
-          <div style="font-size:13px;color:var(--text-secondary);">最高 ${day.tempH}° / 最低 ${day.tempL}° ・ 降水 ${day.rain}% ・ 風 ${day.windKph}km/h</div>
-          <div style="font-size:12px;color:${feel.color};margin-top:2px;">${feel.label}</div>
+    <div class="detail-card-wrap">
+      <div class="weather-hero" style="background:${heroColor}">
+        <div class="weather-hero-graphic">${heroGraphic}</div>
+        <div class="weather-hero-content">
+          <div class="hero-top">
+            <div>
+              <div class="hero-temp">${day.tempH}°</div>
+              <div class="hero-desc">${day.desc}</div>
+            </div>
+            <div class="hero-right">
+              <div class="hero-date">${day.dayName}（${day.dateStr}）</div>
+              <div class="hero-loc">📍 ${currentName}</div>
+            </div>
+          </div>
+          <div class="hero-meta-row">
+            <div class="hero-meta-item"><div class="hero-meta-label">降水確率</div>${day.rain}%</div>
+            <div class="hero-meta-item"><div class="hero-meta-label">最低気温</div>${day.tempL}°</div>
+            <div class="hero-meta-item"><div class="hero-meta-label">風速</div>${day.windKph}km/h</div>
+          </div>
         </div>
       </div>
-      <details class="accordion">
-        <summary>天気の詳細 <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></summary>
-        <div class="accordion-body">
-          ${[['気温（最高）',`${day.tempH}°C`],['気温（最低）',`${day.tempL}°C`],['降水確率',`${day.rain}%`],['最大風速',`${day.windKph}km/h　${day.windKph>=50?'非常に強い':day.windKph>=30?'強い':day.windKph>=15?'やや強い':'穏やか'}`],['天気',day.desc],['体感',feel.label]].map(([k,v])=>`<div class="detail-row"><span style="color:var(--text-secondary);">${k}</span><span style="font-weight:500;">${v}</span></div>`).join('')}
-        </div>
-      </details>
-      ${hint ? `<div class="ai-badge">✦ パーソナル調整済み</div><div class="hint-box">${hint}</div>` : ''}
-      <div class="outfit-body">
-        <div class="outfit-model">${svg}</div>
-        <div class="outfit-items">
-          ${items.map(it => `<div class="outfit-item"><div class="oi-icon">${it.i}</div><div><div class="oi-label">${it.l}</div>${it.s?`<div class="oi-sub">${it.s}</div>`:''}</div></div>`).join('')}
+      <div class="detail-card-body">
+        <details class="accordion" style="margin-top:0;">
+          <summary>天気の詳細 <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></summary>
+          <div class="accordion-body">
+            ${[['気温（最高）',`${day.tempH}°C`],['気温（最低）',`${day.tempL}°C`],['降水確率',`${day.rain}%`],['最大風速',`${day.windKph}km/h　${day.windKph>=50?'非常に強い':day.windKph>=30?'強い':day.windKph>=15?'やや強い':'穏やか'}`],['天気',day.desc],['体感',feel.label]].map(([k,v])=>`<div class="detail-row"><span style="color:var(--text-secondary);">${k}</span><span style="font-weight:500;">${v}</span></div>`).join('')}
+          </div>
+        </details>
+        ${hint ? `<div class="ai-badge">✦ パーソナル調整済み</div><div class="hint-box">${hint}</div>` : ''}
+        <div class="outfit-body">
+          <div class="outfit-model">${svg}</div>
+          <div class="outfit-items">
+            ${items.map(it => `<div class="outfit-item"><div class="oi-icon">${it.i}</div><div><div class="oi-label">${it.l}</div>${it.s?`<div class="oi-sub">${it.s}</div>`:''}</div></div>`).join('')}
+          </div>
         </div>
       </div>
     </div>`;
