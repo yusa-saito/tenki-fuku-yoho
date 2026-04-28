@@ -119,8 +119,8 @@
   .feel-btn:hover { border-color: var(--border-hover); }
   .feel-btn.selected { border-color: var(--blue); color: var(--blue-mid); background: var(--blue-bg); }
   .tag-cat-label { font-size: 11px; color: var(--text-secondary); margin: 10px 0 5px; }
-  .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 4px; }
-  .tag-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 6px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; transition: all 0.12s; min-height: 68px; }
+  .tag-grid { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 4px; overflow-x: auto; padding-bottom: 4px; }
+  .tag-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 6px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; transition: all 0.12s; min-height: 68px; flex-shrink: 0; width: 72px; }
   .tag-btn:hover { border-color: var(--border-hover); }
   .tag-btn.selected { border-color: var(--blue); background: var(--blue-bg); }
   .tag-btn-icon { font-size: 22px; line-height: 1; }
