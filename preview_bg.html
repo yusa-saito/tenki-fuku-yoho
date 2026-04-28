@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>背景プレビュー</title>
+<style>
+  :root { --border: rgba(0,0,0,0.1); --text-secondary: #6e6e73; --radius-lg: 14px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #e0e5ea; font-family: -apple-system, 'Helvetica Neue', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+
+  .switcher { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; max-width: 360px; }
+  .sw-btn { padding: 5px 12px; border-radius: 20px; border: 1.5px solid rgba(0,0,0,0.15); background: white; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.12s; color: #444; }
+  .sw-btn.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+
+  .detail-card { width: 320px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
+
+  .weather-hero { padding: 20px 18px 18px; color: white; position: relative; overflow: hidden; min-height: 120px; transition: background 0.3s; }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .hero-temp { font-size: 52px; font-weight: 300; line-height: 1; }
+  .hero-desc { font-size: 15px; margin-top: 5px; opacity: 0.9; }
+  .hero-right { text-align: right; }
+  .hero-date { font-size: 12px; opacity: 0.8; }
+  .hero-loc { font-size: 14px; font-weight: 500; margin-top: 3px; }
+  .hero-meta { display: flex; gap: 20px; margin-top: 14px; }
+  .hero-meta-item { font-size: 12px; opacity: 0.85; }
+  .hero-meta-label { font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+
+  .weather-graphic { position: absolute; right: -10px; top: 50%; transform: translateY(-50%); opacity: 0.22; z-index: 0; }
+
+  .card-body { background: white; padding: 14px 16px; }
+  .section-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+  .outfit-body { display: flex; gap: 12px; align-items: flex-start; }
+  .outfit-items { flex: 1; }
+  .outfit-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+  .outfit-item:last-child { border-bottom: none; }
+  .oi-icon { font-size: 20px; width: 26px; text-align: center; }
+  .oi-label { font-size: 13px; font-weight: 500; }
+  .oi-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<div class="switcher" id="switcher"></div>
+
+<div class="detail-card">
+  <div class="weather-hero" id="hero">
+    <div class="weather-graphic" id="graphic"></div>
+    <div class="hero-content">
+      <div class="hero-top">
+        <div>
+          <div class="hero-temp" id="temp"></div>
+          <div class="hero-desc" id="desc"></div>
+        </div>
+        <div class="hero-right">
+          <div class="hero-date" id="date"></div>
+          <div class="hero-loc" id="loc"></div>
+        </div>
+      </div>
+      <div class="hero-meta">
+        <div class="hero-meta-item"><div class="hero-meta-label">降水確率</div><span id="rain"></span></div>
+        <div class="hero-meta-item"><div class="hero-meta-label">最低気温</div><span id="low"></span></div>
+        <div class="hero-meta-item"><div class="hero-meta-label">風速</div><span id="wind"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="section-title">今日の服装提案</div>
+    <div class="outfit-body">
+      <div class="outfit-model">
+        <svg viewBox="0 0 80 165" width="68" height="140" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 102 L59 102 L57 152 L42 152 L40 128 L38 128 L23 152 Z" fill="#2D4A6A"/>
+          <rect x="39" y="102" width="2" height="26" fill="#243D5A"/>
+          <rect x="19" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
+          <rect x="41" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
+          <path d="M18 58 L62 58 L62 104 L18 104 Z" fill="#F0E0B8"/>
+          <rect x="18" y="58" width="44" height="8" fill="#E8D0A0"/>
+          <rect x="18" y="74" width="44" height="8" fill="#E8D0A0"/>
+          <rect x="18" y="90" width="44" height="8" fill="#E8D0A0"/>
+          <path d="M30 58 L25 72 L40 76 L55 72 L50 58" fill="#E0CE98"/>
+          <rect x="5" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
+          <rect x="60" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
+          <rect x="5" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
+          <rect x="60" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
+          <ellipse cx="12" cy="115" rx="8" ry="6" fill="#F0856E"/>
+          <ellipse cx="68" cy="115" rx="8" ry="6" fill="#F0856E"/>
+          <rect x="35" y="44" width="10" height="16" fill="#F0856E"/>
+          <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+          <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+          <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+          <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+          <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+        </svg>
+      </div>
+      <div class="outfit-items" id="items"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CIRCLE = `<svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg"><circle cx="65" cy="65" r="60" fill="white"/></svg>`;
+const CLOUDY = `<svg width="130" height="110" viewBox="0 0 130 110" xmlns="http://www.w3.org/2000/svg"><path d="M-10 30 Q12 10 35 30 Q58 50 80 30 Q102 10 125 30 L125 55 Q102 35 80 55 Q58 75 35 55 Q12 35 -10 55 Z" fill="white"/><path d="M-10 65 Q12 45 35 65 Q58 85 80 65 Q102 45 125 65 L125 90 Q102 70 80 90 Q58 110 35 90 Q12 70 -10 90 Z" fill="white"/></svg>`;
+const RAINY  = `<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${Array.from({length:7},(_,i)=>`<rect x="${i*16+4}" y="0" width="7" height="120" rx="3.5" fill="white"/>`).join('')}</svg>`;
+const SNOWY  = `<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${Array.from({length:16},(_,i)=>`<circle cx="${(i%4)*30+15}" cy="${Math.floor(i/4)*30+15}" r="7" fill="white"/>`).join('')}</svg>`;
+
+const patterns = [
+  { label:'猛暑日 36°', color:'#e8522a', graphic:CIRCLE,  temp:'36°', desc:'快晴',        loc:'📍 東京都', date:'8月5日（月）',   rain:'5%',  low:'28°', wind:'8km/h',
+    items:[{icon:'👕',label:'半袖Tシャツ'},{icon:'👗',label:'スカート',sub:'通気性重視'}] },
+  { label:'真夏日 31°', color:'#f0952a', graphic:CIRCLE,  temp:'31°', desc:'晴れ',        loc:'📍 大阪府', date:'7月18日（木）',  rain:'10%', low:'24°', wind:'10km/h',
+    items:[{icon:'👕',label:'半袖Tシャツ'},{icon:'👖',label:'スラックス'}] },
+  { label:'快適 22°',   color:'#5ab4f0', graphic:CIRCLE,  temp:'22°', desc:'晴れ時々曇り', loc:'📍 京都府', date:'4月28日（月）', rain:'20%', low:'14°', wind:'12km/h',
+    items:[{icon:'👔',label:'長袖カットソー',sub:'日中は半袖でも◎'},{icon:'🧥',label:'薄手ジャケット'},{icon:'👖',label:'スラックス'}] },
+  { label:'涼しい 14°', color:'#74aee0', graphic:CIRCLE,  temp:'14°', desc:'晴れ',        loc:'📍 札幌市', date:'10月3日（木）', rain:'15%', low:'7°',  wind:'14km/h',
+    items:[{icon:'🧶',label:'ニット'},{icon:'🧥',label:'トレンチコート'},{icon:'👖',label:'デニム'}] },
+  { label:'曇り 18°',   color:'#8fa5b0', graphic:CLOUDY, temp:'18°', desc:'曇り',        loc:'📍 名古屋市',date:'11月8日（金）', rain:'40%', low:'12°', wind:'16km/h',
+    items:[{icon:'🧶',label:'ニット'},{icon:'🧥',label:'コート'},{icon:'👖',label:'デニム'}] },
+  { label:'雨 16°',     color:'#5c7a8a', graphic:RAINY,  temp:'16°', desc:'雨',          loc:'📍 福岡市', date:'6月12日（水）', rain:'80%', low:'13°', wind:'20km/h',
+    items:[{icon:'👔',label:'長袖カットソー'},{icon:'🧥',label:'トレンチコート'},{icon:'👖',label:'スラックス'}] },
+  { label:'寒い 4°',    color:'#7070c0', graphic:CIRCLE,  temp:'4°',  desc:'晴れ',        loc:'📍 仙台市', date:'1月20日（月）', rain:'10%', low:'-1°', wind:'18km/h',
+    items:[{icon:'🔥',label:'ヒートテック'},{icon:'🧶',label:'ニット'},{icon:'🧥',label:'ダウン'},{icon:'🐑',label:'ウールパンツ'}] },
+  { label:'雪 -2°',     color:'#80aadc', graphic:SNOWY,  temp:'-2°', desc:'雪',          loc:'📍 旭川市', date:'2月3日（火）',  rain:'70%', low:'-8°', wind:'22km/h',
+    items:[{icon:'🔥',label:'ヒートテック'},{icon:'🧶',label:'ニット'},{icon:'🧥',label:'ダウン'},{icon:'🐑',label:'ウールパンツ'}] },
+];
+
+let current = 0;
+
+function render(i) {
+  current = i;
+  const p = patterns[i];
+  document.getElementById('hero').style.background = p.color;
+  document.getElementById('graphic').innerHTML = p.graphic;
+  document.getElementById('temp').textContent = p.temp;
+  document.getElementById('desc').textContent = p.desc;
+  document.getElementById('loc').textContent = p.loc;
+  document.getElementById('date').textContent = p.date;
+  document.getElementById('rain').textContent = p.rain;
+  document.getElementById('low').textContent = p.low;
+  document.getElementById('wind').textContent = p.wind;
+  document.getElementById('items').innerHTML = p.items.map(it =>
+    `<div class="outfit-item"><div class="oi-icon">${it.icon}</div><div><div class="oi-label">${it.label}</div>${it.sub?`<div class="oi-sub">${it.sub}</div>`:''}</div></div>`
+  ).join('');
+  document.querySelectorAll('.sw-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+}
+
+const sw = document.getElementById('switcher');
+patterns.forEach((p,i) => {
+  const btn = document.createElement('button');
+  btn.className = 'sw-btn';
+  btn.textContent = p.label;
+  btn.onclick = () => render(i);
+  sw.appendChild(btn);
+});
+
+render(2);
+</script>
+</body>
+</html>
