@@ -70,7 +70,13 @@
   .gps-btn { display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border); background: transparent; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit; }
   .gps-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
   .gps-btn.active { background: var(--blue-bg); color: var(--blue-mid); border-color: var(--blue); }
-  .current-loc { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-top: 8px; }
+  .current-loc { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-top: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .current-loc::after { content: '›'; font-size: 14px; color: var(--text-secondary); transform: rotate(90deg); display: inline-block; transition: transform 0.2s; }
+  .location-bar.collapsed .loc-tabs,
+  .location-bar.collapsed .loc-panel,
+  .location-bar.collapsed .loc-panel.active { display: none; }
+  .location-bar.collapsed .current-loc { margin-top: 0; }
+  .location-bar.collapsed .current-loc::after { transform: rotate(-90deg); }
 
   /* Header */
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
@@ -265,7 +271,7 @@
         </div>
       </div>
     </div>
-    <div class="current-loc" id="current-loc-label">📍 東京都</div>
+    <div class="current-loc" id="current-loc-label" onclick="toggleLocationBar()">📍 東京都</div>
   </div>
 
   <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
@@ -421,6 +427,14 @@ async function getJpCityCoords(prefName, cityName) {
   } catch { return null; }
 }
 
+function collapseLocationBar() {
+  document.querySelector('.location-bar').classList.add('collapsed');
+}
+
+function toggleLocationBar() {
+  document.querySelector('.location-bar').classList.toggle('collapsed');
+}
+
 function selectPref(val, resetCity) {
   if (!val) {
     document.getElementById('city-row').style.display = 'none';
@@ -442,6 +456,7 @@ function selectPref(val, resetCity) {
     });
   }
   document.getElementById('city-row').style.display = cities.length ? '' : 'none';
+  if (!cities.length) collapseLocationBar();
   fetchWeather();
 }
 
@@ -455,6 +470,7 @@ async function selectCityInPref(cityName) {
   if (coords) { currentLat = coords.lat; currentLon = coords.lon; }
   currentName = cityName;
   document.getElementById('current-loc-label').textContent = '📍 ' + cityName;
+  collapseLocationBar();
   fetchWeather();
 }
 
@@ -503,6 +519,7 @@ function selectCity(lat, lon, name) {
   if (sugg) sugg.style.display = 'none';
   document.getElementById('current-loc-label').textContent = '📍 ' + name;
   document.getElementById('gps-btn').classList.remove('active');
+  collapseLocationBar();
   fetchWeather();
 }
 
@@ -524,6 +541,7 @@ function useGPS() {
     btn.classList.add('active');
     currentName = `現在地 (${currentLat.toFixed(2)}, ${currentLon.toFixed(2)})`;
     document.getElementById('current-loc-label').textContent = '📍 ' + currentName;
+    collapseLocationBar();
     fetchWeather();
   }, () => {
     btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg> 現在地を使用`;
