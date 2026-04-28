@@ -119,10 +119,14 @@
   .feel-btn:hover { border-color: var(--border-hover); }
   .feel-btn.selected { border-color: var(--blue); color: var(--blue-mid); background: var(--blue-bg); }
   .tag-cat-label { font-size: 11px; color: var(--text-secondary); margin: 10px 0 5px; }
-  .tag-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
-  .tag-btn { padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-size: 12px; color: var(--text-secondary); font-family: inherit; transition: all 0.12s; }
+  .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 4px; }
+  .tag-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 6px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; transition: all 0.12s; min-height: 68px; }
   .tag-btn:hover { border-color: var(--border-hover); }
-  .tag-btn.selected { border-color: var(--blue); color: var(--blue-mid); background: var(--blue-bg); }
+  .tag-btn.selected { border-color: var(--blue); background: var(--blue-bg); }
+  .tag-btn-icon { font-size: 22px; line-height: 1; }
+  .tag-btn-label { font-size: 10px; color: var(--text-secondary); text-align: center; line-height: 1.3; }
+  .tag-btn.selected .tag-btn-label { color: var(--blue-mid); }
+  .warmth-dot { width: 8px; height: 8px; border-radius: 50%; }
   .save-btn { width: 100%; margin-top: 10px; padding: 10px; border-radius: 8px; border: none; background: var(--text-primary); color: var(--bg-primary); font-size: 13px; cursor: pointer; font-family: inherit; }
   .save-btn:hover { opacity: 0.85; }
   .feedback { font-size: 13px; color: var(--green-text); margin-top: 8px; display: none; }
@@ -348,25 +352,25 @@ const JAPAN_CITIES = {
 };
 
 
+const WARMTH_COLORS = ['', '#93C5FD', '#6EE7B7', '#FCD34D', '#FB923C', '#F87171'];
+
 const OUTFIT_TAGS = [
-  { id: 'tank',       label: 'タンクトップ',   warmth: 1, cat: 'トップス' },
-  { id: 'tshirt',     label: '半袖Tシャツ',    warmth: 2, cat: 'トップス' },
-  { id: 'longsleeve', label: '長袖シャツ',      warmth: 3, cat: 'トップス' },
-  { id: 'knit',       label: 'ニット',          warmth: 4, cat: 'トップス' },
-  { id: 'turtleneck', label: 'タートルネック',  warmth: 4, cat: 'トップス' },
-  { id: 'hoodie',     label: 'パーカー',        warmth: 3, cat: 'トップス' },
-  { id: 'cardigan',   label: 'カーディガン',    warmth: 2, cat: 'アウター' },
-  { id: 'jacket',     label: '薄手ジャケット',  warmth: 3, cat: 'アウター' },
-  { id: 'coat',       label: 'コート',          warmth: 4, cat: 'アウター' },
-  { id: 'down',       label: 'ダウン・中綿',    warmth: 5, cat: 'アウター' },
-  { id: 'shorts',     label: 'ショートパンツ',  warmth: 1, cat: 'ボトムス' },
-  { id: 'skirt',      label: 'スカート',        warmth: 2, cat: 'ボトムス' },
-  { id: 'pants',      label: '薄手パンツ',      warmth: 3, cat: 'ボトムス' },
-  { id: 'jeans',      label: 'デニム',          warmth: 4, cat: 'ボトムス' },
-  { id: 'muffler',    label: 'マフラー',        warmth: 3, cat: '小物' },
-  { id: 'gloves',     label: '手袋',            warmth: 3, cat: '小物' },
-  { id: 'hat',        label: '帽子・ニット帽',  warmth: 2, cat: '小物' },
-  { id: 'umbrella',   label: '傘',              warmth: 0, cat: '小物' },
+  { id: 'cami',       label: 'キャミソール',        emoji: '🩱', warmth: 1, cat: 'インナー' },
+  { id: 'inner',      label: '長袖インナー',         emoji: '🌡️', warmth: 4, cat: 'インナー' },
+  { id: 'noslv',      label: 'ノースリーブ',         emoji: '🩱', warmth: 1, cat: 'トップス' },
+  { id: 'tshirt',     label: '半袖Tシャツ',          emoji: '👕', warmth: 2, cat: 'トップス' },
+  { id: 'longsleeve', label: '長袖カットソー・シャツ', emoji: '👔', warmth: 3, cat: 'トップス' },
+  { id: 'sweat',      label: 'スウェット',           emoji: '🧸', warmth: 4, cat: 'トップス' },
+  { id: 'knit',       label: 'ニット',               emoji: '🧶', warmth: 4, cat: 'トップス' },
+  { id: 'cardigan',   label: 'カーディガン',         emoji: '🧥', warmth: 2, cat: 'アウター' },
+  { id: 'jacket',     label: '薄手ジャケット',       emoji: '🫧', warmth: 3, cat: 'アウター' },
+  { id: 'trench',     label: 'トレンチコート',       emoji: '🕵️', warmth: 4, cat: 'アウター' },
+  { id: 'coat',       label: 'コート',               emoji: '🧥', warmth: 5, cat: 'アウター' },
+  { id: 'down',       label: 'ダウン',               emoji: '❄️', warmth: 5, cat: 'アウター' },
+  { id: 'skirt',      label: 'スカート',             emoji: '👗', warmth: 1, cat: 'ボトムス' },
+  { id: 'slacks',     label: 'スラックス',           emoji: '👖', warmth: 3, cat: 'ボトムス' },
+  { id: 'jeans',      label: 'デニム',               emoji: '👖', warmth: 4, cat: 'ボトムス' },
+  { id: 'woolpants',  label: 'ウールパンツ',         emoji: '🐑', warmth: 5, cat: 'ボトムス' },
 ];
 
 let weatherDays = [];
@@ -971,7 +975,11 @@ function renderRecordInline(existing) {
     <div class="tag-cat-label">${cat}</div>
     <div class="tag-grid">
       ${OUTFIT_TAGS.filter(t => t.cat === cat).map(t =>
-        `<button class="tag-btn" data-tag="${t.id}" onclick="toggleTag(this)">${t.label}</button>`
+        `<button class="tag-btn" data-tag="${t.id}" onclick="toggleTag(this)">
+          <span class="warmth-dot" style="background:${WARMTH_COLORS[t.warmth]}"></span>
+          <span class="tag-btn-icon">${t.emoji}</span>
+          <span class="tag-btn-label">${t.label}</span>
+        </button>`
       ).join('')}
     </div>`).join('');
   document.getElementById('record-inline-wrap').innerHTML = `
