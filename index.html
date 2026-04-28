@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<title>週間天気 & 服装プランナー</title>
+<title>今日なに着る？</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -130,7 +130,7 @@
   .tag-btn-label { font-size: 10px; color: var(--text-secondary); text-align: center; line-height: 1.3; }
   .tag-btn.selected .tag-btn-label { color: var(--blue-mid); }
   .warmth-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .save-btn { width: 100%; margin-top: 10px; padding: 10px; border-radius: 8px; border: none; background: var(--text-primary); color: var(--bg-primary); font-size: 13px; cursor: pointer; font-family: inherit; }
+  .save-btn { display: block; margin-top: 10px; padding: 10px 32px; border-radius: 8px; border: none; background: var(--text-primary); color: var(--bg-primary); font-size: 13px; cursor: pointer; font-family: inherit; }
   .save-btn:hover { opacity: 0.85; }
   .feedback { font-size: 13px; color: var(--green-text); margin-top: 8px; display: none; }
 
@@ -169,7 +169,7 @@
   <!-- Header -->
   <div class="header">
     <div>
-      <h1>☁ 週間天気 &amp; 服装プランナー</h1>
+      <h1>今日なに着る？</h1>
       <div class="header-sub" id="last-updated"></div>
     </div>
   </div>
