@@ -611,12 +611,12 @@ function _head() {
 const OUTFIT_SVGS = {
   /* 30°C〜: ストライプキャミ + ワイドショーツ */
   hot: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 92 L59 92 L57 152 L42 152 L40 122 L38 122 L23 152 Z" fill="#5BADA5"/>
+    <path d="M21 92 H59 L65 152 H42 L40 122 H38 V152 H16 L21 92 Z" fill="#5BADA5"/>
     <rect x="39" y="92" width="2" height="30" fill="#4A9890"/>
-    <rect x="19" y="150" width="21" height="13" rx="5" fill="#1C1C1C"/>
-    <rect x="42" y="150" width="21" height="13" rx="5" fill="#1C1C1C"/>
-    <rect x="19" y="157" width="21" height="6" rx="3" fill="white"/>
-    <rect x="42" y="157" width="21" height="6" rx="3" fill="white"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#1C1C1C"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#1C1C1C"/>
+    <rect x="42" y="153" width="20" height="6" rx="3" fill="white"/>
+    <rect x="19" y="153" width="20" height="6" rx="3" fill="white"/>
     <path d="M22 55 L58 55 L58 92 L22 92 Z" fill="white"/>
     <rect x="22" y="64" width="36" height="9" fill="#5BADA5"/>
     <rect x="22" y="81" width="36" height="9" fill="#5BADA5"/>
@@ -638,10 +638,10 @@ const OUTFIT_SVGS = {
   </svg>`,
   /* 25〜30°C: ノースリーブブラウス + ワイドパンツ */
   warm: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 98 L60 98 L58 152 L43 152 L40 124 L37 124 L22 152 Z" fill="#8BB4C8"/>
+    <path d="M20 98 H60 L65 152 H42 L40 124 H38 V152 H16 L20 98 Z" fill="#8BB4C8"/>
     <rect x="39" y="98" width="2" height="26" fill="#7AA4B8"/>
-    <rect x="19" y="150" width="22" height="13" rx="5" fill="#3A3A3A"/>
-    <rect x="41" y="150" width="22" height="13" rx="5" fill="#3A3A3A"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#3A3A3A"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#3A3A3A"/>
     <rect x="20" y="94" width="40" height="7" rx="3" fill="#C8A870"/>
     <rect x="37" y="92" width="6" height="9" rx="2" fill="#A08850"/>
     <path d="M24 55 L56 55 L58 98 L22 98 Z" fill="#FCEBD4"/>
@@ -663,10 +663,10 @@ const OUTFIT_SVGS = {
   </svg>`,
   /* 20〜25°C: 長袖シャツ + チノパン */
   comfortable_w: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 100 L59 100 L57 152 L42 152 L40 126 L38 126 L23 152 Z" fill="#C4B090"/>
+    <path d="M21 100 H59 L65 152 H42 L40 126 H38 V152 H16 L21 100 Z" fill="#C4B090"/>
     <rect x="39" y="100" width="2" height="26" fill="#B4A080"/>
-    <rect x="19" y="150" width="22" height="13" rx="5" fill="#9A8870"/>
-    <rect x="41" y="150" width="22" height="13" rx="5" fill="#9A8870"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#9A8870"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#9A8870"/>
     <path d="M20 55 L60 55 L60 100 L20 100 Z" fill="#B8CCE8"/>
     <path d="M32 55 L26 66 L40 70 L54 66 L48 55" fill="#A8BCE0"/>
     <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
@@ -688,10 +688,10 @@ const OUTFIT_SVGS = {
   </svg>`,
   /* 15〜20°C: オーバーサイズニット + ダークパンツ */
   comfortable: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 102 L59 102 L57 152 L42 152 L40 128 L38 128 L23 152 Z" fill="#2D4A6A"/>
+    <path d="M21 102 H59 L65 152 H42 L40 128 H38 V152 H16 L21 102 Z" fill="#2D4A6A"/>
     <rect x="39" y="102" width="2" height="26" fill="#243D5A"/>
-    <rect x="19" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
-    <rect x="41" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#1E3050"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#1E3050"/>
     <path d="M18 58 L62 58 L62 104 L18 104 Z" fill="#F0E0B8"/>
     <rect x="18" y="58" width="44" height="8" fill="#E8D0A0"/>
     <rect x="18" y="74" width="44" height="8" fill="#E8D0A0"/>
@@ -721,10 +721,10 @@ const OUTFIT_SVGS = {
   </svg>`,
   /* 10〜15°C: ロングカーディガン + パンツ */
   cool: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M22 102 L58 102 L56 152 L41 152 L40 128 L39 128 L24 152 Z" fill="#546778"/>
+    <path d="M22 102 H58 L65 152 H42 L40 128 H38 V152 H16 L22 102 Z" fill="#546778"/>
     <rect x="39" y="102" width="2" height="26" fill="#445668"/>
-    <rect x="20" y="150" width="21" height="13" rx="5" fill="#37485A"/>
-    <rect x="41" y="150" width="21" height="13" rx="5" fill="#37485A"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#37485A"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#37485A"/>
     <rect x="35" y="55" width="10" height="49" fill="#FCEBD4"/>
     <path d="M20 55 L35 55 L33 104 L20 104 Z" fill="#ECC0C0"/>
     <path d="M45 55 L60 55 L60 104 L47 104 Z" fill="#ECC0C0"/>
