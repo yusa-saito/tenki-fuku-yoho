@@ -114,10 +114,13 @@
   .tip-box { margin-top: 12px; padding: 10px; background: var(--bg-secondary); border-radius: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
 
   /* Record tab */
-  .feel-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-  .feel-btn { flex: 1; min-width: 90px; padding: 8px 4px; border-radius: 8px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-size: 12px; color: var(--text-secondary); font-family: inherit; transition: all 0.12s; text-align: center; }
+  .feel-selector { display: flex; gap: 6px; margin-bottom: 12px; }
+  .feel-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 2px; border-radius: 8px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; transition: all 0.12s; min-width: 0; }
+  .feel-btn-icon { font-size: 18px; line-height: 1; }
+  .feel-btn-label { font-size: 10px; color: var(--text-secondary); text-align: center; line-height: 1.2; white-space: nowrap; }
   .feel-btn:hover { border-color: var(--border-hover); }
-  .feel-btn.selected { border-color: var(--blue); color: var(--blue-mid); background: var(--blue-bg); }
+  .feel-btn.selected { border-color: var(--blue); background: var(--blue-bg); }
+  .feel-btn.selected .feel-btn-label { color: var(--blue-mid); }
   .tag-cat-label { font-size: 11px; color: var(--text-secondary); margin: 10px 0 5px; }
   .tag-grid { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 4px; overflow-x: auto; padding-bottom: 4px; }
   .tag-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 6px; border-radius: 10px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; transition: all 0.12s; min-height: 68px; flex-shrink: 0; width: 72px; }
@@ -162,6 +165,14 @@
 </head>
 <body>
 <div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>☁ 週間天気 &amp; 服装プランナー</h1>
+      <div class="header-sub" id="last-updated"></div>
+    </div>
+  </div>
 
   <!-- Location bar -->
   <div class="location-bar">
@@ -255,14 +266,6 @@
       </div>
     </div>
     <div class="current-loc" id="current-loc-label">📍 東京都</div>
-  </div>
-
-  <!-- Header -->
-  <div class="header">
-    <div>
-      <h1>☁ 週間天気 &amp; 服装プランナー</h1>
-      <div class="header-sub" id="last-updated"></div>
-    </div>
   </div>
 
   <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
@@ -988,11 +991,11 @@ function renderRecordInline(existing) {
       <h3>${selectedDay === 0 ? '昨日' : '今日'}を記録</h3>
       <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;margin-top:4px;">体感温度</label>
       <div class="feel-selector">
-        <button class="feel-btn" data-feel="very_cold" onclick="selectFeel(this)">🥶 すごく寒い</button>
-        <button class="feel-btn" data-feel="cold" onclick="selectFeel(this)">🧥 寒い</button>
-        <button class="feel-btn" data-feel="just_right" onclick="selectFeel(this)">😊 ちょうどいい</button>
-        <button class="feel-btn" data-feel="warm" onclick="selectFeel(this)">😅 暑い</button>
-        <button class="feel-btn" data-feel="very_warm" onclick="selectFeel(this)">🥵 すごく暑い</button>
+        <button class="feel-btn" data-feel="very_cold" onclick="selectFeel(this)"><span class="feel-btn-icon">🥶</span><span class="feel-btn-label">すごく寒い</span></button>
+        <button class="feel-btn" data-feel="cold" onclick="selectFeel(this)"><span class="feel-btn-icon">🧥</span><span class="feel-btn-label">寒い</span></button>
+        <button class="feel-btn" data-feel="just_right" onclick="selectFeel(this)"><span class="feel-btn-icon">😊</span><span class="feel-btn-label">ちょうど<br>いい</span></button>
+        <button class="feel-btn" data-feel="warm" onclick="selectFeel(this)"><span class="feel-btn-icon">😅</span><span class="feel-btn-label">暑い</span></button>
+        <button class="feel-btn" data-feel="very_warm" onclick="selectFeel(this)"><span class="feel-btn-icon">🥵</span><span class="feel-btn-label">すごく暑い</span></button>
       </div>
       <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;margin-top:12px;">着ていた服装（複数選択可）</label>
       ${tagsHtml}
