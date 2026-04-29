@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>カラー調整</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: #f0f0ee; padding: 32px 24px; color: #1a1a1a; }
+
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .page-desc { font-size: 13px; color: #888; margin-bottom: 36px; }
+
+  section { margin-bottom: 48px; }
+  .sec-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .sec-desc  { font-size: 12px; color: #999; margin-bottom: 20px; }
+
+  /* Swatch grid */
+  .swatches { display: flex; flex-wrap: wrap; gap: 14px; }
+  .swatch { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .swatch-box {
+    width: 90px; height: 64px; border-radius: 12px;
+    position: relative; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: transform 0.1s;
+  }
+  .swatch-box:hover { transform: scale(1.05); }
+  .swatch-box input[type="color"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: none;
+  }
+  .swatch-label { font-size: 11px; color: #444; text-align: center; max-width: 90px; line-height: 1.3; }
+  .swatch-hex   { font-size: 10px; color: #aaa; font-family: 'SF Mono', monospace; }
+
+  /* Hero preview cards */
+  .preview-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  .prev-card { border-radius: 10px; overflow: hidden; width: 120px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+  .prev-hero { height: 60px; padding: 8px 10px; display: flex; align-items: flex-end; }
+  .prev-hero-label { color: white; font-size: 10px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .prev-body { background: white; padding: 6px 10px; }
+  .prev-body-text { font-size: 9px; color: #bbb; }
+
+  /* Character preview */
+  .char-section { display: flex; align-items: flex-start; gap: 32px; flex-wrap: wrap; }
+  .char-svg-wrap {
+    background: white; border-radius: 16px;
+    padding: 20px 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .char-svg-wrap .label { font-size: 12px; color: #aaa; }
+
+  /* Export */
+  .export-btn {
+    background: #1a1a1a; color: white; border: none;
+    padding: 12px 24px; border-radius: 10px; font-size: 14px;
+    cursor: pointer; font-family: inherit; transition: background 0.15s;
+  }
+  .export-btn:hover { background: #444; }
+  .export-box {
+    margin-top: 16px; background: #1c1c1e; color: #a8e6a3;
+    padding: 20px; border-radius: 12px;
+    font-family: 'SF Mono', monospace; font-size: 12px;
+    white-space: pre; display: none; overflow-x: auto;
+    line-height: 1.7;
+  }
+  .copy-notice { margin-top: 8px; font-size: 12px; color: #888; }
+</style>
+</head>
+<body>
+
+<h1>カラー調整プレビュー</h1>
+<p class="page-desc">色をクリックして変更 → リアルタイムでプレビュー確認 → 「エクスポート」でコードをコピーしてClaude Codeに貼り付け</p>
+
+<!-- ① ヒーロー背景色 -->
+<section>
+  <div class="sec-title">① ヒーロー背景色</div>
+  <div class="sec-desc">天気カードの背景色。クリックして変更するとプレビューに即時反映されます。</div>
+  <div class="swatches" id="hero-swatches"></div>
+  <div class="preview-row" id="hero-previews"></div>
+</section>
+
+<!-- ② キャラクター色 -->
+<section>
+  <div class="sec-title">② キャラクター色</div>
+  <div class="sec-desc">全アウトフィット共通の肌色・髪色。変更するとキャラクターに即時反映されます。</div>
+  <div class="char-section">
+    <div class="swatches" id="char-swatches"></div>
+    <div class="char-svg-wrap">
+      <div id="char-preview"></div>
+      <div class="label">プレビュー（快適コーデ）</div>
+    </div>
+  </div>
+</section>
+
+<!-- エクスポート -->
+<button class="export-btn" onclick="doExport()">📋 色コードをエクスポート</button>
+<div class="copy-notice" id="copy-notice"></div>
+<pre class="export-box" id="export-box"></pre>
+
+<script>
+const heroData = [
+  { id:'hot',     label:'猛暑日 ≥35°',   color:'#e8522a' },
+  { id:'warm',    label:'真夏日 ≥28°',   color:'#f0952a' },
+  { id:'comfort', label:'快適 18-27°',   color:'#5ab4f0' },
+  { id:'cool',    label:'涼しい 10-17°', color:'#74aee0' },
+  { id:'cold',    label:'寒い <10°',     color:'#7070c0' },
+  { id:'cloudy',  label:'曇り',           color:'#8fa5b0' },
+  { id:'rainy',   label:'雨',             color:'#5c7a8a' },
+  { id:'snowy',   label:'雪',             color:'#80aadc' },
+];
+
+const charData = [
+  { id:'skin', label:'肌・顔・手', color:'#F0856E' },
+  { id:'hair', label:'髪',         color:'#1C1C1C' },
+  { id:'lips', label:'唇・耳の影', color:'#D06050' },
+];
+
+// ── ヒーロー色スウォッチ ──
+const heroSwEl = document.getElementById('hero-swatches');
+const heroPrevEl = document.getElementById('hero-previews');
+
+heroData.forEach(d => {
+  heroSwEl.innerHTML += `
+    <div class="swatch">
+      <div class="swatch-box" id="sw-${d.id}" style="background:${d.color}">
+        <input type="color" value="${d.color}" oninput="updateHero('${d.id}',this.value)">
+      </div>
+      <div class="swatch-label">${d.label}</div>
+      <div class="swatch-hex" id="hex-${d.id}">${d.color}</div>
+    </div>`;
+
+  heroPrevEl.innerHTML += `
+    <div class="prev-card">
+      <div class="prev-hero" id="prev-${d.id}" style="background:${d.color}">
+        <div class="prev-hero-label">${d.label}</div>
+      </div>
+      <div class="prev-body"><div class="prev-body-text">服装カード</div></div>
+    </div>`;
+});
+
+function updateHero(id, color) {
+  document.getElementById(`sw-${id}`).style.background = color;
+  document.getElementById(`hex-${id}`).textContent = color;
+  document.getElementById(`prev-${id}`).style.background = color;
+  heroData.find(d => d.id === id).color = color;
+}
+
+// ── キャラクター色スウォッチ ──
+const charSwEl = document.getElementById('char-swatches');
+
+charData.forEach(d => {
+  charSwEl.innerHTML += `
+    <div class="swatch">
+      <div class="swatch-box" id="sw-${d.id}" style="background:${d.color}">
+        <input type="color" value="${d.color}" oninput="updateChar('${d.id}',this.value)">
+      </div>
+      <div class="swatch-label">${d.label}</div>
+      <div class="swatch-hex" id="hex-${d.id}">${d.color}</div>
+    </div>`;
+});
+
+function c(id) { return charData.find(d => d.id === id).color; }
+
+function buildCharSVG() {
+  const skin = c('skin'), hair = c('hair'), lips = c('lips');
+  return `<svg viewBox="0 0 80 165" width="90" height="186" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 102 H59 L65 152 H42 L40 128 H38 V152 H16 L21 102 Z" fill="#2D4A6A"/>
+    <rect x="39" y="102" width="2" height="26" fill="#243D5A"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#1E3050"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#1E3050"/>
+    <path d="M18 58 L62 58 L62 104 L18 104 Z" fill="#F0E0B8"/>
+    <rect x="18" y="58" width="44" height="8" fill="#E8D0A0"/>
+    <rect x="18" y="74" width="44" height="8" fill="#E8D0A0"/>
+    <rect x="18" y="90" width="44" height="8" fill="#E8D0A0"/>
+    <path d="M30 58 L25 72 L40 76 L55 72 L50 58" fill="#E0CE98"/>
+    <path d="M20 58 V112 H5 C5 112 5 72 20 58 Z" fill="#F0E0B8"/>
+    <path d="M60 58 V112 H75 C75 112 75 72 60 58 Z" fill="#F0E0B8"/>
+    <rect x="5" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
+    <rect x="60" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
+    <ellipse cx="12" cy="115" rx="6" ry="8" fill="${skin}"/>
+    <ellipse cx="68" cy="115" rx="6" ry="8" fill="${skin}"/>
+    <rect x="35" y="51" width="10" height="10" fill="${skin}"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="${hair}"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="${skin}"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="${skin}"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="${skin}"/>
+    <path d="M38.52 30.19C45.94 25.85 49.78 18.6 47.09 14C44.4 9.4 36.2 9.19 28.78 13.53C21.35 17.87 17.5 25.11 20.2 29.71C22.9 34.31 31.09 34.52 38.52 30.19Z" fill="${hair}"/>
+    <path d="M47.88 31.14C52.59 33.93 58.06 33.4 60.09 29.97C62.11 26.53 59.93 21.49 55.22 18.71C50.5 15.92 45.03 16.45 43 19.88C40.98 23.32 43.16 28.36 47.88 31.14Z" fill="${hair}"/>
+    <path d="M26.67 39.33C21.17 37.5 19.28 29.22 19 27.67L26.67 31.33V39.33Z" fill="${hair}"/>
+    <path d="M53.33 39.33C58.83 37.5 60.72 29.22 61 27.67L53.33 31.33V39.33Z" fill="${hair}"/>
+  </svg>`;
+}
+
+function updateChar(id, color) {
+  document.getElementById(`sw-${id}`).style.background = color;
+  document.getElementById(`hex-${id}`).textContent = color;
+  charData.find(d => d.id === id).color = color;
+  document.getElementById('char-preview').innerHTML = buildCharSVG();
+}
+
+document.getElementById('char-preview').innerHTML = buildCharSVG();
+
+// ── エクスポート ──
+function doExport() {
+  const h = id => heroData.find(d => d.id === id).color;
+  const lines = [
+    '// ━━ ヒーロー背景色 ━━',
+    'function getHeroColor(tempH, wmoCode) {',
+    `  if (SNOW_CODES.has(wmoCode))   return '${h('snowy')}';`,
+    `  if (RAIN_CODES.has(wmoCode))   return '${h('rainy')}';`,
+    `  if (CLOUDY_CODES.has(wmoCode)) return '${h('cloudy')}';`,
+    `  if (tempH >= 35) return '${h('hot')}';`,
+    `  if (tempH >= 28) return '${h('warm')}';`,
+    `  if (tempH >= 18) return '${h('comfort')}';`,
+    `  if (tempH >= 10) return '${h('cool')}';`,
+    `  return '${h('cold')}';`,
+    '}',
+    '',
+    '// ━━ キャラクター色 ━━',
+    `// 肌: ${c('skin')}`,
+    `// 髪: ${c('hair')}`,
+    `// 唇・耳の影: ${c('lips')}`,
+  ].join('\n');
+
+  const box = document.getElementById('export-box');
+  box.textContent = lines;
+  box.style.display = 'block';
+
+  navigator.clipboard.writeText(lines).then(() => {
+    document.getElementById('copy-notice').textContent = '✅ クリップボードにコピーしました';
+  }).catch(() => {
+    document.getElementById('copy-notice').textContent = '上のコードをコピーしてください';
+  });
+}
+</script>
+</body>
+</html>
