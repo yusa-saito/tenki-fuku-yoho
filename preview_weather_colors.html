@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>気温パターン別 背景色確認</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    background: #111;
+    padding: 40px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+  h1 { color: #888; font-size: 12px; letter-spacing: 0.08em; font-weight: 400; }
+  .note { color: #555; font-size: 11px; text-align: center; line-height: 1.7; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .phone { width: 190px; height: 400px; border-radius: 28px; border: 6px solid #222; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
+  .phone-inner { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+  /* 上部 */
+  .top { padding: 12px 12px 8px; flex-shrink: 0; position: relative; overflow: hidden; }
+
+  /* 天気グラフィック（背景装飾） */
+  .weather-graphic { position: absolute; right: 8px; top: 8px; opacity: 0.35; }
+
+  .temp-big { font-size: 38px; font-weight: 300; line-height: 1; margin-bottom: 2px; }
+  .weather-desc { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
+  .weather-sub { font-size: 10px; opacity: 0.65; margin-bottom: 10px; }
+
+  .day-row { display: flex; gap: 3px; margin-bottom: 8px; }
+  .mini-card { flex: 1; background: rgba(255,255,255,0.22); border-radius: 6px; padding: 4px 2px; text-align: center; font-size: 8px; line-height: 1.5; }
+  .mini-card.sel { background: rgba(255,255,255,0.4); outline: 1.5px solid rgba(43,46,61,0.4); }
+
+  .outfit-row { display: flex; gap: 8px; align-items: flex-start; position: relative; z-index: 1; }
+  .oi { display: flex; align-items: center; gap: 5px; padding: 4px 0; border-bottom: 0.5px solid rgba(43,46,61,0.12); }
+  .oi:last-child { border-bottom: none; }
+  .oi-icon { width: 20px; height: 20px; border-radius: 4px; background: rgba(255,255,255,0.28); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+  .oi-text { font-size: 9px; font-weight: 500; }
+  .oi-sub { font-size: 8px; opacity: 0.6; }
+
+  /* ハーフモーダル */
+  .modal { flex: 1; background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,0.12); padding: 8px 10px 10px; }
+  .modal-handle { width: 28px; height: 3px; background: #ddd; border-radius: 2px; margin: 0 auto 6px; }
+  .modal-title { font-size: 10px; font-weight: 500; color: #1a1a18; border-bottom: 0.5px solid #eee; padding-bottom: 5px; margin-bottom: 7px; }
+  .feel-row { display: flex; gap: 2px; margin-bottom: 6px; }
+  .feel-chip { flex: 1; padding: 3px 1px; border-radius: 4px; border: 0.5px solid #ddd; font-size: 7px; color: #888; text-align: center; }
+  .feel-chip.sel { border-color: #378ADD; color: #185FA5; background: #E6F1FB; }
+  .tag-lbl { font-size: 8px; color: #aaa; margin-bottom: 2px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 5px; }
+  .tag { padding: 2px 6px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 8px; color: #888; }
+  .tag.sel { border-color: #378ADD; color: #185FA5; background: #E6F1FB; }
+  .save { width: 100%; padding: 5px; border-radius: 6px; background: #1a1a18; color: #fff; border: none; font-size: 9px; }
+
+  .label-wrap { text-align: center; }
+  .label-name { font-size: 12px; font-weight: 500; color: #ddd; }
+  .label-range { font-size: 10px; color: #666; margin-top: 1px; }
+  .label-hex { font-size: 11px; color: #555; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>気温パターン別 背景色確認（全7パターン）</h1>
+<div class="note">
+  気温ベースで7段階。天気グラフィック（☀/🌧など）は右上に装飾として表示。<br>
+  各パターンの色を「◯◯は#XXXXXXにして」と教えてください。
+</div>
+
+<div class="row">
+
+  <!-- 1. hot 30°C+ -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-inner" style="background:#F7D5D3">
+        <div class="top">
+          <!-- 天気グラフィック -->
+          <svg class="weather-graphic" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="36" cy="36" r="18" fill="#2B2E3D"/>
+            <line x1="36" y1="4" x2="36" y2="12" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="36" y1="60" x2="36" y2="68" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="4" y1="36" x2="12" y2="36" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="60" y1="36" x2="68" y2="36" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="14" y1="14" x2="20" y2="20" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="52" y1="52" x2="58" y2="58" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="58" y1="14" x2="52" y2="20" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+            <line x1="14" y1="58" x2="20" y2="52" stroke="#2B2E3D" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <div class="temp-big" style="color:#2B2E3D">32°</div>
+          <div class="weather-desc" style="color:#2B2E3D">快晴 / 猛暑</div>
+          <div class="weather-sub" style="color:#2B2E3D">最低 26° · 降水 0% · 風 3km/h</div>
+          <div class="day-row">
+            <div class="mini-card sel" style="color:#2B2E3D">今<br>☀<br>32°</div>
+            <div class="mini-card" style="color:#2B2E3D">明<br>🌤<br>30°</div>
+            <div class="mini-card" style="color:#2B2E3D">月<br>⛅<br>28°</div>
+            <div class="mini-card" style="color:#2B2E3D">火<br>🌧<br>24°</div>
+          </div>
+          <div class="outfit-row">
+            <svg viewBox="0 0 80 165" width="44" height="90" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 92 L59 92 L57 152 L42 152 L40 122 L38 122 L23 152 Z" fill="#5BADA5"/>
+              <path d="M22 55 L58 55 L58 92 L22 92 Z" fill="white"/>
+              <rect x="22" y="64" width="36" height="9" fill="#5BADA5"/>
+              <rect x="30" y="44" width="6" height="13" rx="3" fill="white"/>
+              <rect x="44" y="44" width="6" height="13" rx="3" fill="white"/>
+              <rect x="8" y="55" width="14" height="48" rx="7" fill="#F0856E"/>
+              <rect x="58" y="55" width="14" height="48" rx="7" fill="#F0856E"/>
+              <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+              <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+              <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+              <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+            </svg>
+            <div style="flex:1">
+              <div class="oi"><div class="oi-icon">👙</div><div><div class="oi-text" style="color:#2B2E3D">タンクトップ</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">熱中症注意</div></div></div>
+              <div class="oi"><div class="oi-icon">👕</div><div><div class="oi-text" style="color:#2B2E3D">半袖</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">通気性重視</div></div></div>
+              <div class="oi"><div class="oi-icon">🧴</div><div><div class="oi-text" style="color:#2B2E3D">日焼け止め</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">UV対策</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">今日を記録</div>
+          <div class="feel-row"><div class="feel-chip">🥶</div><div class="feel-chip sel">😊</div><div class="feel-chip">🥵</div></div>
+          <div class="tag-lbl">トップス</div>
+          <div class="tags"><div class="tag sel">半袖T</div><div class="tag">ニット</div></div>
+          <div class="tag-lbl">アウター</div>
+          <div class="tags"><div class="tag">コート</div><div class="tag">ダウン</div></div>
+          <button class="save">記録を保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="label-wrap">
+      <div class="label-name">🌞 猛暑</div>
+      <div class="label-range">30°C 以上</div>
+      <div class="label-hex">#F7D5D3</div>
+    </div>
+  </div>
+
+  <!-- 2. warm 25〜30°C -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-inner" style="background:#E4E2C6">
+        <div class="top">
+          <svg class="weather-graphic" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="28" cy="38" r="14" fill="#2B2E3D"/>
+            <line x1="28" y1="8" x2="28" y2="15" stroke="#2B2E3D" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="8" y1="38" x2="15" y2="38" stroke="#2B2E3D" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="14" y1="18" x2="19" y2="23" stroke="#2B2E3D" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="42" y1="18" x2="37" y2="23" stroke="#2B2E3D" stroke-width="2.5" stroke-linecap="round"/>
+            <ellipse cx="50" cy="42" rx="16" ry="12" fill="#2B2E3D" opacity="0.5"/>
+            <ellipse cx="40" cy="46" rx="14" ry="11" fill="#2B2E3D" opacity="0.5"/>
+          </svg>
+          <div class="temp-big" style="color:#2B2E3D">28°</div>
+          <div class="weather-desc" style="color:#2B2E3D">晴れ時々曇り / 暑い</div>
+          <div class="weather-sub" style="color:#2B2E3D">最低 22° · 降水 5% · 風 8km/h</div>
+          <div class="day-row">
+            <div class="mini-card sel" style="color:#2B2E3D">今<br>⛅<br>28°</div>
+            <div class="mini-card" style="color:#2B2E3D">明<br>☀<br>30°</div>
+            <div class="mini-card" style="color:#2B2E3D">月<br>🌥<br>24°</div>
+            <div class="mini-card" style="color:#2B2E3D">火<br>🌧<br>20°</div>
+          </div>
+          <div class="outfit-row">
+            <svg viewBox="0 0 80 165" width="44" height="90" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 98 L60 98 L58 152 L43 152 L40 124 L37 124 L22 152 Z" fill="#8BB4C8"/>
+              <path d="M24 55 L56 55 L58 98 L22 98 Z" fill="#FCEBD4"/>
+              <rect x="28" y="44" width="9" height="13" rx="4" fill="#FCEBD4"/>
+              <rect x="43" y="44" width="9" height="13" rx="4" fill="#FCEBD4"/>
+              <rect x="8" y="55" width="14" height="50" rx="7" fill="#F0856E"/>
+              <rect x="58" y="55" width="14" height="50" rx="7" fill="#F0856E"/>
+              <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+              <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+              <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+              <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+            </svg>
+            <div style="flex:1">
+              <div class="oi"><div class="oi-icon">👕</div><div><div class="oi-text" style="color:#2B2E3D">五分袖</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">薄手シャツ</div></div></div>
+              <div class="oi"><div class="oi-icon">🧶</div><div><div class="oi-text" style="color:#2B2E3D">薄手ニット</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">朝晩の羽織り</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">今日を記録</div>
+          <div class="feel-row"><div class="feel-chip">🥶</div><div class="feel-chip sel">😊</div><div class="feel-chip">🥵</div></div>
+          <div class="tag-lbl">トップス</div>
+          <div class="tags"><div class="tag sel">半袖T</div><div class="tag">長袖</div></div>
+          <div class="tag-lbl">アウター</div>
+          <div class="tags"><div class="tag">カーディガン</div><div class="tag">コート</div></div>
+          <button class="save">記録を保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="label-wrap">
+      <div class="label-name">⛅ 暑い</div>
+      <div class="label-range">25〜30°C</div>
+      <div class="label-hex">#E4E2C6</div>
+    </div>
+  </div>
+
+  <!-- 3. comfortable_w 20〜25°C -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-inner" style="background:#B9DAF4">
+        <div class="top">
+          <svg class="weather-graphic" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="34" r="12" fill="#2B2E3D"/>
+            <line x1="26" y1="6" x2="26" y2="13" stroke="#2B2E3D" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="6" y1="34" x2="13" y2="34" stroke="#2B2E3D" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="12" y1="16" x2="17" y2="21" stroke="#2B2E3D" stroke-width="2.5" stroke-linecap="round"/>
+            <ellipse cx="52" cy="44" rx="14" ry="10" fill="#2B2E3D" opacity="0.45"/>
+            <ellipse cx="42" cy="48" rx="13" ry="10" fill="#2B2E3D" opacity="0.45"/>
+            <ellipse cx="56" cy="50" rx="10" ry="8" fill="#2B2E3D" opacity="0.45"/>
+          </svg>
+          <div class="temp-big" style="color:#2B2E3D">22°</div>
+          <div class="weather-desc" style="color:#2B2E3D">晴れ / やや暑い</div>
+          <div class="weather-sub" style="color:#2B2E3D">最低 16° · 降水 5% · 風 7km/h</div>
+          <div class="day-row">
+            <div class="mini-card sel" style="color:#2B2E3D">今<br>🌤<br>22°</div>
+            <div class="mini-card" style="color:#2B2E3D">明<br>⛅<br>20°</div>
+            <div class="mini-card" style="color:#2B2E3D">月<br>🌧<br>18°</div>
+            <div class="mini-card" style="color:#2B2E3D">火<br>🌥<br>21°</div>
+          </div>
+          <div class="outfit-row">
+            <svg viewBox="0 0 80 165" width="44" height="90" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 100 L59 100 L57 152 L42 152 L40 126 L38 126 L23 152 Z" fill="#C4B090"/>
+              <path d="M20 55 L60 55 L60 100 L20 100 Z" fill="#B8CCE8"/>
+              <path d="M32 55 L26 66 L40 70 L54 66 L48 55" fill="#A8BCE0"/>
+              <rect x="8" y="55" width="14" height="52" rx="7" fill="#B8CCE8"/>
+              <rect x="58" y="55" width="14" height="52" rx="7" fill="#B8CCE8"/>
+              <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+              <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+              <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+              <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+            </svg>
+            <div style="flex:1">
+              <div class="oi"><div class="oi-icon">👔</div><div><div class="oi-text" style="color:#2B2E3D">長袖シャツ</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">袖捲りで調節</div></div></div>
+              <div class="oi"><div class="oi-icon">🧥</div><div><div class="oi-text" style="color:#2B2E3D">カーディガン</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">寒暖差対策</div></div></div>
+              <div class="oi"><div class="oi-icon">🪆</div><div><div class="oi-text" style="color:#2B2E3D">ストール</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">脱ぎ着便利</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">今日を記録</div>
+          <div class="feel-row"><div class="feel-chip">🥶</div><div class="feel-chip sel">😊</div><div class="feel-chip">🥵</div></div>
+          <div class="tag-lbl">トップス</div>
+          <div class="tags"><div class="tag sel">長袖シャツ</div><div class="tag">ニット</div></div>
+          <div class="tag-lbl">アウター</div>
+          <div class="tags"><div class="tag sel">カーディガン</div><div class="tag">コート</div></div>
+          <button class="save">記録を保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="label-wrap">
+      <div class="label-name">🌤 やや暑い</div>
+      <div class="label-range">20〜25°C</div>
+      <div class="label-hex">#B9DAF4</div>
+    </div>
+  </div>
+
+  <!-- 4. comfortable 15〜20°C -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-inner" style="background:#B9DAF4">
+        <div class="top">
+          <svg class="weather-graphic" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="38" rx="18" ry="13" fill="#2B2E3D" opacity="0.5"/>
+            <ellipse cx="38" cy="42" rx="16" ry="12" fill="#2B2E3D" opacity="0.55"/>
+            <ellipse cx="54" cy="44" rx="13" ry="10" fill="#2B2E3D" opacity="0.5"/>
+            <ellipse cx="30" cy="40" rx="14" ry="11" fill="#2B2E3D" opacity="0.6"/>
+          </svg>
+          <div class="temp-big" style="color:#2B2E3D">17°</div>
+          <div class="weather-desc" style="color:#2B2E3D">曇り / 快適</div>
+          <div class="weather-sub" style="color:#2B2E3D">最低 12° · 降水 15% · 風 10km/h</div>
+          <div class="day-row">
+            <div class="mini-card sel" style="color:#2B2E3D">今<br>🌥<br>17°</div>
+            <div class="mini-card" style="color:#2B2E3D">明<br>🌤<br>19°</div>
+            <div class="mini-card" style="color:#2B2E3D">月<br>☀<br>21°</div>
+            <div class="mini-card" style="color:#2B2E3D">火<br>🌧<br>15°</div>
+          </div>
+          <div class="outfit-row">
+            <svg viewBox="0 0 80 165" width="44" height="90" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 102 L59 102 L57 152 L42 152 L40 128 L38 128 L23 152 Z" fill="#2D4A6A"/>
+              <path d="M18 58 L62 58 L62 104 L18 104 Z" fill="#F0E0B8"/>
+              <rect x="18" y="58" width="44" height="8" fill="#E8D0A0"/>
+              <rect x="18" y="74" width="44" height="8" fill="#E8D0A0"/>
+              <rect x="5" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
+              <rect x="60" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
+              <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+              <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+              <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+              <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+            </svg>
+            <div style="flex:1">
+              <div class="oi"><div class="oi-icon">🧶</div><div><div class="oi-text" style="color:#2B2E3D">薄手セーター</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">コットン素材</div></div></div>
+              <div class="oi"><div class="oi-icon">🧥</div><div><div class="oi-text" style="color:#2B2E3D">ジャケット</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">重ね着調節</div></div></div>
+              <div class="oi"><div class="oi-icon">🪆</div><div><div class="oi-text" style="color:#2B2E3D">ストール</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">肌寒さ対策</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">今日を記録</div>
+          <div class="feel-row"><div class="feel-chip">🥶</div><div class="feel-chip sel">😊</div><div class="feel-chip">🥵</div></div>
+          <div class="tag-lbl">トップス</div>
+          <div class="tags"><div class="tag sel">ニット</div><div class="tag">長袖</div></div>
+          <div class="tag-lbl">アウター</div>
+          <div class="tags"><div class="tag sel">ジャケット</div><div class="tag">コート</div></div>
+          <button class="save">記録を保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="label-wrap">
+      <div class="label-name">🌥 快適</div>
+      <div class="label-range">15〜20°C</div>
+      <div class="label-hex">#B9DAF4</div>
+    </div>
+  </div>
+
+  <!-- 5. cool 10〜15°C -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-inner" style="background:#97BFCD">
+        <div class="top">
+          <svg class="weather-graphic" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="48" cy="34" rx="16" ry="12" fill="#2B2E3D" opacity="0.5"/>
+            <ellipse cx="36" cy="38" rx="15" ry="11" fill="#2B2E3D" opacity="0.55"/>
+            <ellipse cx="52" cy="40" rx="12" ry="9" fill="#2B2E3D" opacity="0.5"/>
+            <ellipse cx="28" cy="36" rx="13" ry="10" fill="#2B2E3D" opacity="0.6"/>
+            <line x1="28" y1="54" x2="26" y2="62" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+            <line x1="36" y1="52" x2="34" y2="60" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+            <line x1="44" y1="54" x2="42" y2="62" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+            <line x1="52" y1="52" x2="50" y2="60" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+          <div class="temp-big" style="color:#2B2E3D">12°</div>
+          <div class="weather-desc" style="color:#2B2E3D">雨 / やや寒い</div>
+          <div class="weather-sub" style="color:#2B2E3D">最低 8° · 降水 70% · 風 15km/h</div>
+          <div class="day-row">
+            <div class="mini-card sel" style="color:#2B2E3D">今<br>🌧<br>12°</div>
+            <div class="mini-card" style="color:#2B2E3D">明<br>🌥<br>14°</div>
+            <div class="mini-card" style="color:#2B2E3D">月<br>🌤<br>16°</div>
+            <div class="mini-card" style="color:#2B2E3D">火<br>☀<br>18°</div>
+          </div>
+          <div class="outfit-row">
+            <svg viewBox="0 0 80 165" width="44" height="90" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 102 L58 102 L56 152 L41 152 L40 128 L39 128 L24 152 Z" fill="#546778"/>
+              <rect x="35" y="55" width="10" height="49" fill="#FCEBD4"/>
+              <path d="M20 55 L35 55 L33 104 L20 104 Z" fill="#ECC0C0"/>
+              <path d="M45 55 L60 55 L60 104 L47 104 Z" fill="#ECC0C0"/>
+              <rect x="6" y="55" width="15" height="54" rx="7" fill="#ECC0C0"/>
+              <rect x="59" y="55" width="15" height="54" rx="7" fill="#ECC0C0"/>
+              <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+              <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+              <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+              <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+            </svg>
+            <div style="flex:1">
+              <div class="oi"><div class="oi-icon">☂</div><div><div class="oi-text" style="color:#2B2E3D">傘</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">必須</div></div></div>
+              <div class="oi"><div class="oi-icon">🧥</div><div><div class="oi-text" style="color:#2B2E3D">トレンチコート</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">防風素材</div></div></div>
+              <div class="oi"><div class="oi-icon">🧣</div><div><div class="oi-text" style="color:#2B2E3D">マフラー</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">首元防寒</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">今日を記録</div>
+          <div class="feel-row"><div class="feel-chip sel">🥶</div><div class="feel-chip">😊</div><div class="feel-chip">🥵</div></div>
+          <div class="tag-lbl">トップス</div>
+          <div class="tags"><div class="tag sel">ニット</div><div class="tag">長袖</div></div>
+          <div class="tag-lbl">アウター</div>
+          <div class="tags"><div class="tag sel">コート</div><div class="tag">ダウン</div></div>
+          <button class="save">記録を保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="label-wrap">
+      <div class="label-name">🌧 やや寒い</div>
+      <div class="label-range">10〜15°C</div>
+      <div class="label-hex">#97BFCD</div>
+    </div>
+  </div>
+
+  <!-- 6. cold 5〜10°C -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-inner" style="background:#97BFCD">
+        <div class="top">
+          <svg class="weather-graphic" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="48" cy="32" rx="16" ry="12" fill="#2B2E3D" opacity="0.45"/>
+            <ellipse cx="34" cy="36" rx="15" ry="11" fill="#2B2E3D" opacity="0.5"/>
+            <ellipse cx="52" cy="38" rx="12" ry="9" fill="#2B2E3D" opacity="0.45"/>
+            <ellipse cx="26" cy="34" rx="13" ry="10" fill="#2B2E3D" opacity="0.55"/>
+            <line x1="24" y1="52" x2="22" y2="62" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            <line x1="32" y1="50" x2="30" y2="60" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            <line x1="40" y1="52" x2="38" y2="62" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            <line x1="48" y1="50" x2="46" y2="60" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            <line x1="56" y1="52" x2="54" y2="62" stroke="#2B2E3D" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+          </svg>
+          <div class="temp-big" style="color:#2B2E3D">7°</div>
+          <div class="weather-desc" style="color:#2B2E3D">曇り時々雨 / 寒い</div>
+          <div class="weather-sub" style="color:#2B2E3D">最低 3° · 降水 45% · 風 20km/h</div>
+          <div class="day-row">
+            <div class="mini-card sel" style="color:#2B2E3D">今<br>🌦<br>7°</div>
+            <div class="mini-card" style="color:#2B2E3D">明<br>🌥<br>9°</div>
+            <div class="mini-card" style="color:#2B2E3D">月<br>🌤<br>11°</div>
+            <div class="mini-card" style="color:#2B2E3D">火<br>☀<br>13°</div>
+          </div>
+          <div class="outfit-row">
+            <svg viewBox="0 0 80 165" width="44" height="90" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 104 L62 104 L60 145 L42 145 L40 125 L38 125 L20 145 Z" fill="#2D3A2A"/>
+              <rect x="18" y="143" width="24" height="18" rx="5" fill="#3E2A1A"/>
+              <rect x="40" y="143" width="24" height="18" rx="5" fill="#3E2A1A"/>
+              <path d="M16 52 L64 52 L64 106 L16 106 Z" fill="#D4C0A8"/>
+              <path d="M32 52 L22 68 L36 72 L40 52" fill="#C4B090"/>
+              <path d="M48 52 L58 68 L44 72 L40 52" fill="#C4B090"/>
+              <path d="M22 40 Q40 50 58 40 L58 54 Q40 62 22 54 Z" fill="#B8CCE0"/>
+              <rect x="4" y="52" width="14" height="58" rx="7" fill="#D4C0A8"/>
+              <rect x="62" y="52" width="14" height="58" rx="7" fill="#D4C0A8"/>
+              <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
+              <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
+              <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+              <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
+            </svg>
+            <div style="flex:1">
+              <div class="oi"><div class="oi-icon">🧥</div><div><div class="oi-text" style="color:#2B2E3D">冬コート</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">しっかり防寒</div></div></div>
+              <div class="oi"><div class="oi-icon">🧣</div><div><div class="oi-text" style="color:#2B2E3D">マフラー・手袋</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">3首ガード</div></div></div>
+              <div class="oi"><div class="oi-icon">🧶</div><div><div class="oi-text" style="color:#2B2E3D">暖かいインナー</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">体温キープ</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">今日を記録</div>
+          <div class="feel-row"><div class="feel-chip sel">🥶</div><div class="feel-chip">😊</div><div class="feel-chip">🥵</div></div>
+          <div class="tag-lbl">トップス</div>
+          <div class="tags"><div class="tag sel">ニット</div><div class="tag">タートル</div></div>
+          <div class="tag-lbl">アウター</div>
+          <div class="tags"><div class="tag sel">コート</div><div class="tag">ダウン</div></div>
+          <button class="save">記録を保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="label-wrap">
+      <div class="label-name">🌦 寒い</div>
+      <div class="label-range">5〜10°C</div>
+      <div class="label-hex">#97BFCD</div>
+    </div>
+  </div>
+
+  <!-- 7. very_cold 5°C以下 -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-inner" style="background:#B9DAF4">
+        <div class="top">
+          <svg class="weather-graphic" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="48" cy="30" rx="16" ry="12" fill="#2B2E3D" opacity="0.45"/>
+            <ellipse cx="34" cy="34" rx="15" ry="11" fill="#2B2E3D" opacity="0.5"/>
+            <ellipse cx="52" cy="36" rx="12" ry="9" fill="#2B2E3D" opacity="0.45"/>
+            <ellipse cx="26" cy="32" rx="13" ry="10" fill="#2B2E3D" opacity="0.55"/>
+            <!-- 雪の結晶 -->
+            <circle cx="28" cy="56" r="2.5" fill="#2B2E3D" opacity="0.6"/>
+            <circle cx="36" cy="62" r="2.5" fill="#2B2E3D" opacity="0.6"/>
+            <circle cx="44" cy="54" r="2.5" fill="#2B2E3D" opacity="0.6"/>
+            <circle cx="52" cy="60" r="2.5" fill="#2B2E3D" opacity="0.6"/>
+            <circle cx="32" cy="66" r="2" fill="#2B2E3D" opacity="0.5"/>
+            <circle cx="48" cy="66" r="2" fill="#2B2E3D" opacity="0.5"/>
+          </svg>
+          <div class="temp-big" style="color:#2B2E3D">1°</div>
+          <div class="weather-desc" style="color:#2B2E3D">雪 / 極寒</div>
+          <div class="weather-sub" style="color:#2B2E3D">最低 -2° · 降水 85% · 風 12km/h</div>
+          <div class="day-row">
+            <div class="mini-card sel" style="color:#2B2E3D">今<br>🌨<br>1°</div>
+            <div class="mini-card" style="color:#2B2E3D">明<br>🌥<br>4°</div>
+            <div class="mini-card" style="color:#2B2E3D">月<br>🌤<br>7°</div>
+            <div class="mini-card" style="color:#2B2E3D">火<br>☀<br>9°</div>
+          </div>
+          <div class="outfit-row">
+            <svg viewBox="0 0 80 165" width="44" height="90" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 106 L64 106 L62 146 L43 146 L40 126 L37 126 L18 146 Z" fill="#2D3748"/>
+              <rect x="16" y="144" width="26" height="18" rx="5" fill="#4E342E"/>
+              <rect x="40" y="144" width="26" height="18" rx="5" fill="#4E342E"/>
+              <path d="M13 54 L67 54 L67 108 L13 108 Z" fill="#90BED8"/>
+              <rect x="13" y="54" width="54" height="9" fill="#7AAEC8"/>
+              <rect x="13" y="71" width="54" height="9" fill="#7AAEC8"/>
+              <rect x="1" y="54" width="14" height="58" rx="7" fill="#90BED8"/>
+              <rect x="65" y="54" width="14" height="58" rx="7" fill="#90BED8"/>
+              <path d="M24 42 Q40 50 56 42 L56 56 Q40 64 24 56 Z" fill="#F4B8C4"/>
+              <ellipse cx="40" cy="19" rx="21" ry="16" fill="#1C1C1C"/>
+              <ellipse cx="40" cy="30" rx="17" ry="17" fill="#F0856E"/>
+              <ellipse cx="40" cy="14" rx="21" ry="12" fill="#1C1C1C"/>
+              <ellipse cx="23" cy="30" rx="3.5" ry="4" fill="#F0856E"/>
+              <ellipse cx="57" cy="30" rx="3.5" ry="4" fill="#F0856E"/>
+            </svg>
+            <div style="flex:1">
+              <div class="oi"><div class="oi-icon">🧥</div><div><div class="oi-text" style="color:#2B2E3D">厚手ダウン</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">完全防備</div></div></div>
+              <div class="oi"><div class="oi-icon">🧣</div><div><div class="oi-text" style="color:#2B2E3D">マフラー・手袋・帽子</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">全身防寒</div></div></div>
+              <div class="oi"><div class="oi-icon">👕</div><div><div class="oi-text" style="color:#2B2E3D">厚手インナー</div><div class="oi-sub" style="color:rgba(43,46,61,0.6)">ヒートテック必須</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">今日を記録</div>
+          <div class="feel-row"><div class="feel-chip sel">🥶</div><div class="feel-chip">😊</div><div class="feel-chip">🥵</div></div>
+          <div class="tag-lbl">トップス</div>
+          <div class="tags"><div class="tag sel">ニット</div><div class="tag">タートル</div></div>
+          <div class="tag-lbl">アウター</div>
+          <div class="tags"><div class="tag sel">ダウン</div><div class="tag">コート</div></div>
+          <button class="save">記録を保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="label-wrap">
+      <div class="label-name">🌨 極寒</div>
+      <div class="label-range">5°C 以下</div>
+      <div class="label-hex">#B9DAF4</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
