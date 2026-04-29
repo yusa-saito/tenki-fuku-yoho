@@ -255,24 +255,23 @@ const WEATHER_CACHE_KEY = 'weather_cache_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 const OUTFIT_TAGS = [
-  { id: 'tank',       label: 'タンクトップ',   warmth: 1, cat: 'トップス' },
-  { id: 'tshirt',     label: '半袖Tシャツ',    warmth: 2, cat: 'トップス' },
-  { id: 'longsleeve', label: '長袖シャツ',      warmth: 3, cat: 'トップス' },
-  { id: 'knit',       label: 'ニット',          warmth: 4, cat: 'トップス' },
-  { id: 'turtleneck', label: 'タートルネック',  warmth: 4, cat: 'トップス' },
-  { id: 'hoodie',     label: 'パーカー',        warmth: 3, cat: 'トップス' },
-  { id: 'cardigan',   label: 'カーディガン',    warmth: 2, cat: 'アウター' },
-  { id: 'jacket',     label: '薄手ジャケット',  warmth: 3, cat: 'アウター' },
-  { id: 'coat',       label: 'コート',          warmth: 4, cat: 'アウター' },
-  { id: 'down',       label: 'ダウン・中綿',    warmth: 5, cat: 'アウター' },
-  { id: 'shorts',     label: 'ショートパンツ',  warmth: 1, cat: 'ボトムス' },
-  { id: 'skirt',      label: 'スカート',        warmth: 2, cat: 'ボトムス' },
-  { id: 'pants',      label: '薄手パンツ',      warmth: 3, cat: 'ボトムス' },
-  { id: 'jeans',      label: 'デニム',          warmth: 4, cat: 'ボトムス' },
-  { id: 'muffler',    label: 'マフラー',        warmth: 3, cat: '小物' },
-  { id: 'gloves',     label: '手袋',            warmth: 3, cat: '小物' },
-  { id: 'hat',        label: '帽子・ニット帽',  warmth: 2, cat: '小物' },
-  { id: 'umbrella',   label: '傘',              warmth: 0, cat: '小物' },
+  { id: 'cami',       label: 'タンクトップ・キャミソール', warmth: 1, cat: 'インナー' },
+  { id: 'inner',      label: '長袖インナー',              warmth: 3, cat: 'インナー' },
+  { id: 'heattech',   label: 'ヒートテック・厚手インナー', warmth: 5, cat: 'インナー' },
+  { id: 'noslv',      label: 'ノースリーブ',              warmth: 1, cat: 'トップス' },
+  { id: 'tshirt',     label: '半袖Tシャツ',               warmth: 2, cat: 'トップス' },
+  { id: 'longsleeve', label: '長袖カットソー・シャツ',    warmth: 3, cat: 'トップス' },
+  { id: 'sweat',      label: 'スウェット',                warmth: 4, cat: 'トップス' },
+  { id: 'knit',       label: 'ニット',                    warmth: 4, cat: 'トップス' },
+  { id: 'cardigan',   label: 'カーディガン',              warmth: 2, cat: 'アウター' },
+  { id: 'jacket',     label: '薄手ジャケット',            warmth: 3, cat: 'アウター' },
+  { id: 'trench',     label: 'トレンチコート',            warmth: 4, cat: 'アウター' },
+  { id: 'coat',       label: 'コート',                    warmth: 5, cat: 'アウター' },
+  { id: 'down',       label: 'ダウン',                    warmth: 5, cat: 'アウター' },
+  { id: 'skirt',      label: 'スカート',                  warmth: 1, cat: 'ボトムス' },
+  { id: 'slacks',     label: 'スラックス',                warmth: 3, cat: 'ボトムス' },
+  { id: 'jeans',      label: 'デニム',                    warmth: 4, cat: 'ボトムス' },
+  { id: 'woolpants',  label: 'ウールパンツ',              warmth: 5, cat: 'ボトムス' },
 ];
 
 let weatherDays = [];
@@ -349,83 +348,96 @@ const WMO_DESC = {0:'快晴',1:'ほぼ晴れ',2:'晴れ時々曇り',3:'曇り',
 const RAIN_CODES = new Set([51,53,55,61,63,65,80,81,82,95,96,99]);
 
 const OUTFIT_SVGS = {
+  /* 30°C〜: ストライプキャミ + ワイドショーツ */
   hot: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 92 L59 92 L57 152 L42 152 L40 122 L38 122 L23 152 Z" fill="#5BADA5"/>
+    <path d="M21 92 H59 L65 152 H42 L40 122 H38 V152 H16 L21 92 Z" fill="#5BADA5"/>
     <rect x="39" y="92" width="2" height="30" fill="#4A9890"/>
-    <rect x="19" y="150" width="21" height="13" rx="5" fill="#1C1C1C"/>
-    <rect x="42" y="150" width="21" height="13" rx="5" fill="#1C1C1C"/>
-    <rect x="19" y="157" width="21" height="6" rx="3" fill="white"/>
-    <rect x="42" y="157" width="21" height="6" rx="3" fill="white"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#1C1C1C"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#1C1C1C"/>
+    <rect x="42" y="153" width="20" height="6" rx="3" fill="white"/>
+    <rect x="19" y="153" width="20" height="6" rx="3" fill="white"/>
     <path d="M22 55 L58 55 L58 92 L22 92 Z" fill="white"/>
     <rect x="22" y="64" width="36" height="9" fill="#5BADA5"/>
     <rect x="22" y="81" width="36" height="9" fill="#5BADA5"/>
     <rect x="30" y="44" width="6" height="13" rx="3" fill="white"/>
     <rect x="44" y="44" width="6" height="13" rx="3" fill="white"/>
-    <rect x="8" y="55" width="14" height="48" rx="7" fill="#F0856E"/>
-    <rect x="58" y="55" width="14" height="48" rx="7" fill="#F0856E"/>
-    <ellipse cx="15" cy="106" rx="8" ry="6" fill="#F0856E"/>
-    <ellipse cx="65" cy="106" rx="8" ry="6" fill="#F0856E"/>
-    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
-    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
-    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
-    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+    <path d="M22 55 V103 H8 C8 103 8 68 22 55 Z" fill="#F0856E"/>
+    <path d="M58 55 V103 H72 C72 103 72 68 58 55 Z" fill="#F0856E"/>
+    <ellipse cx="15" cy="106" rx="6" ry="8" fill="#F0856E"/>
+    <ellipse cx="65" cy="106" rx="6" ry="8" fill="#F0856E"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="#1C1C1C"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="#F0856E"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="#F0856E"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="#F0856E"/>
+    <path d="M38.52 30.19C45.94 25.85 49.78 18.6 47.09 14C44.4 9.4 36.2 9.19 28.78 13.53C21.35 17.87 17.5 25.11 20.2 29.71C22.9 34.31 31.09 34.52 38.52 30.19Z" fill="#1C1C1C"/>
+    <path d="M47.88 31.14C52.59 33.93 58.06 33.4 60.09 29.97C62.11 26.53 59.93 21.49 55.22 18.71C50.5 15.92 45.03 16.45 43 19.88C40.98 23.32 43.16 28.36 47.88 31.14Z" fill="#1C1C1C"/>
+    <path d="M26.67 39.33C21.17 37.5 19.28 29.22 19 27.67L26.67 31.33V39.33Z" fill="#1C1C1C"/>
+    <path d="M53.33 39.33C58.83 37.5 60.72 29.22 61 27.67L53.33 31.33V39.33Z" fill="#1C1C1C"/>
   </svg>`,
+  /* 25〜30°C: ノースリーブブラウス + ワイドパンツ */
   warm: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 98 L60 98 L58 152 L43 152 L40 124 L37 124 L22 152 Z" fill="#8BB4C8"/>
+    <path d="M20 98 H60 L65 152 H42 L40 124 H38 V152 H16 L20 98 Z" fill="#8BB4C8"/>
     <rect x="39" y="98" width="2" height="26" fill="#7AA4B8"/>
-    <rect x="19" y="150" width="22" height="13" rx="5" fill="#3A3A3A"/>
-    <rect x="41" y="150" width="22" height="13" rx="5" fill="#3A3A3A"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#3A3A3A"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#3A3A3A"/>
     <rect x="20" y="94" width="40" height="7" rx="3" fill="#C8A870"/>
     <rect x="37" y="92" width="6" height="9" rx="2" fill="#A08850"/>
     <path d="M24 55 L56 55 L58 98 L22 98 Z" fill="#FCEBD4"/>
     <rect x="28" y="44" width="9" height="13" rx="4" fill="#FCEBD4"/>
     <rect x="43" y="44" width="9" height="13" rx="4" fill="#FCEBD4"/>
-    <rect x="8" y="55" width="14" height="50" rx="7" fill="#F0856E"/>
-    <rect x="58" y="55" width="14" height="50" rx="7" fill="#F0856E"/>
-    <ellipse cx="15" cy="108" rx="8" ry="6" fill="#F0856E"/>
-    <ellipse cx="65" cy="108" rx="8" ry="6" fill="#F0856E"/>
-    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
-    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
-    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
-    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+    <path d="M22 55 V105 H8 C8 105 8 68 22 55 Z" fill="#F0856E"/>
+    <path d="M58 55 V105 H72 C72 105 72 68 58 55 Z" fill="#F0856E"/>
+    <ellipse cx="15" cy="108" rx="6" ry="8" fill="#F0856E"/>
+    <ellipse cx="65" cy="108" rx="6" ry="8" fill="#F0856E"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="#1C1C1C"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="#F0856E"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="#F0856E"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="#F0856E"/>
+    <path d="M38.52 30.19C45.94 25.85 49.78 18.6 47.09 14C44.4 9.4 36.2 9.19 28.78 13.53C21.35 17.87 17.5 25.11 20.2 29.71C22.9 34.31 31.09 34.52 38.52 30.19Z" fill="#1C1C1C"/>
+    <path d="M47.88 31.14C52.59 33.93 58.06 33.4 60.09 29.97C62.11 26.53 59.93 21.49 55.22 18.71C50.5 15.92 45.03 16.45 43 19.88C40.98 23.32 43.16 28.36 47.88 31.14Z" fill="#1C1C1C"/>
+    <path d="M26.67 39.33C21.17 37.5 19.28 29.22 19 27.67L26.67 31.33V39.33Z" fill="#1C1C1C"/>
+    <path d="M53.33 39.33C58.83 37.5 60.72 29.22 61 27.67L53.33 31.33V39.33Z" fill="#1C1C1C"/>
   </svg>`,
+  /* 20〜25°C: 長袖シャツ + チノパン */
   comfortable_w: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 100 L59 100 L57 152 L42 152 L40 126 L38 126 L23 152 Z" fill="#C4B090"/>
+    <path d="M21 100 H59 L65 152 H42 L40 126 H38 V152 H16 L21 100 Z" fill="#C4B090"/>
     <rect x="39" y="100" width="2" height="26" fill="#B4A080"/>
-    <rect x="19" y="150" width="22" height="13" rx="5" fill="#9A8870"/>
-    <rect x="41" y="150" width="22" height="13" rx="5" fill="#9A8870"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#9A8870"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#9A8870"/>
     <path d="M20 55 L60 55 L60 100 L20 100 Z" fill="#B8CCE8"/>
     <path d="M32 55 L26 66 L40 70 L54 66 L48 55" fill="#A8BCE0"/>
-    <rect x="38" y="44" width="4" height="13" fill="#F0856E"/>
-    <rect x="8" y="55" width="14" height="52" rx="7" fill="#B8CCE8"/>
-    <rect x="58" y="55" width="14" height="52" rx="7" fill="#B8CCE8"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M22 55 V107 H8 C8 107 8 69 22 55 Z" fill="#B8CCE8"/>
+    <path d="M58 55 V107 H72 C72 107 72 69 58 55 Z" fill="#B8CCE8"/>
     <rect x="8" y="98" width="14" height="9" rx="4" fill="#A8BCE0"/>
     <rect x="58" y="98" width="14" height="9" rx="4" fill="#A8BCE0"/>
-    <ellipse cx="15" cy="110" rx="8" ry="6" fill="#F0856E"/>
-    <ellipse cx="65" cy="110" rx="8" ry="6" fill="#F0856E"/>
-    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
-    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
-    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
-    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+    <ellipse cx="15" cy="110" rx="6" ry="8" fill="#F0856E"/>
+    <ellipse cx="65" cy="110" rx="6" ry="8" fill="#F0856E"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="#1C1C1C"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="#F0856E"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="#F0856E"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="#F0856E"/>
+    <path d="M38.52 30.19C45.94 25.85 49.78 18.6 47.09 14C44.4 9.4 36.2 9.19 28.78 13.53C21.35 17.87 17.5 25.11 20.2 29.71C22.9 34.31 31.09 34.52 38.52 30.19Z" fill="#1C1C1C"/>
+    <path d="M47.88 31.14C52.59 33.93 58.06 33.4 60.09 29.97C62.11 26.53 59.93 21.49 55.22 18.71C50.5 15.92 45.03 16.45 43 19.88C40.98 23.32 43.16 28.36 47.88 31.14Z" fill="#1C1C1C"/>
+    <path d="M26.67 39.33C21.17 37.5 19.28 29.22 19 27.67L26.67 31.33V39.33Z" fill="#1C1C1C"/>
+    <path d="M53.33 39.33C58.83 37.5 60.72 29.22 61 27.67L53.33 31.33V39.33Z" fill="#1C1C1C"/>
   </svg>`,
+  /* 15〜20°C: オーバーサイズニット + ダークパンツ */
   comfortable: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 102 L59 102 L57 152 L42 152 L40 128 L38 128 L23 152 Z" fill="#2D4A6A"/>
+    <path d="M21 102 H59 L65 152 H42 L40 128 H38 V152 H16 L21 102 Z" fill="#2D4A6A"/>
     <rect x="39" y="102" width="2" height="26" fill="#243D5A"/>
-    <rect x="19" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
-    <rect x="41" y="150" width="22" height="13" rx="5" fill="#1E3050"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#1E3050"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#1E3050"/>
     <path d="M18 58 L62 58 L62 104 L18 104 Z" fill="#F0E0B8"/>
     <rect x="18" y="58" width="44" height="8" fill="#E8D0A0"/>
     <rect x="18" y="74" width="44" height="8" fill="#E8D0A0"/>
     <rect x="18" y="90" width="44" height="8" fill="#E8D0A0"/>
     <path d="M30 58 L25 72 L40 76 L55 72 L50 58" fill="#E0CE98"/>
-    <rect x="5" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
-    <rect x="60" y="58" width="15" height="54" rx="7" fill="#F0E0B8"/>
+    <path d="M20 58 V112 H5 C5 112 5 72 20 58 Z" fill="#F0E0B8"/>
+    <path d="M60 58 V112 H75 C75 112 75 72 60 58 Z" fill="#F0E0B8"/>
     <rect x="5" y="68" width="15" height="7" fill="#E8D0A0"/>
     <rect x="5" y="83" width="15" height="7" fill="#E8D0A0"/>
     <rect x="5" y="98" width="15" height="7" fill="#E8D0A0"/>
@@ -434,20 +446,24 @@ const OUTFIT_SVGS = {
     <rect x="60" y="98" width="15" height="7" fill="#E8D0A0"/>
     <rect x="5" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
     <rect x="60" y="104" width="15" height="8" rx="4" fill="#D8C090"/>
-    <ellipse cx="12" cy="115" rx="8" ry="6" fill="#F0856E"/>
-    <ellipse cx="68" cy="115" rx="8" ry="6" fill="#F0856E"/>
-    <rect x="35" y="44" width="10" height="16" fill="#F0856E"/>
-    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
-    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
-    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+    <ellipse cx="12" cy="115" rx="6" ry="8" fill="#F0856E"/>
+    <ellipse cx="68" cy="115" rx="6" ry="8" fill="#F0856E"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="#1C1C1C"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="#F0856E"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="#F0856E"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="#F0856E"/>
+    <path d="M38.52 30.19C45.94 25.85 49.78 18.6 47.09 14C44.4 9.4 36.2 9.19 28.78 13.53C21.35 17.87 17.5 25.11 20.2 29.71C22.9 34.31 31.09 34.52 38.52 30.19Z" fill="#1C1C1C"/>
+    <path d="M47.88 31.14C52.59 33.93 58.06 33.4 60.09 29.97C62.11 26.53 59.93 21.49 55.22 18.71C50.5 15.92 45.03 16.45 43 19.88C40.98 23.32 43.16 28.36 47.88 31.14Z" fill="#1C1C1C"/>
+    <path d="M26.67 39.33C21.17 37.5 19.28 29.22 19 27.67L26.67 31.33V39.33Z" fill="#1C1C1C"/>
+    <path d="M53.33 39.33C58.83 37.5 60.72 29.22 61 27.67L53.33 31.33V39.33Z" fill="#1C1C1C"/>
   </svg>`,
+  /* 10〜15°C: ロングカーディガン + パンツ */
   cool: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
-    <path d="M22 102 L58 102 L56 152 L41 152 L40 128 L39 128 L24 152 Z" fill="#546778"/>
+    <path d="M22 102 H58 L65 152 H42 L40 128 H38 V152 H16 L22 102 Z" fill="#546778"/>
     <rect x="39" y="102" width="2" height="26" fill="#445668"/>
-    <rect x="20" y="150" width="21" height="13" rx="5" fill="#37485A"/>
-    <rect x="41" y="150" width="21" height="13" rx="5" fill="#37485A"/>
+    <path d="M42 147H62C69 147 74 152 74 159H42V147Z" fill="#37485A"/>
+    <path d="M39 147H19C12 147 7 152 7 159H39V147Z" fill="#37485A"/>
     <rect x="35" y="55" width="10" height="49" fill="#FCEBD4"/>
     <path d="M20 55 L35 55 L33 104 L20 104 Z" fill="#ECC0C0"/>
     <path d="M45 55 L60 55 L60 104 L47 104 Z" fill="#ECC0C0"/>
@@ -456,19 +472,23 @@ const OUTFIT_SVGS = {
     <circle cx="32" cy="75" r="3" fill="#DCA8A8"/>
     <circle cx="32" cy="88" r="3" fill="#DCA8A8"/>
     <circle cx="32" cy="101" r="3" fill="#DCA8A8"/>
-    <rect x="6" y="55" width="15" height="54" rx="7" fill="#ECC0C0"/>
-    <rect x="59" y="55" width="15" height="54" rx="7" fill="#ECC0C0"/>
+    <path d="M21 55 V109 H6 C6 109 6 69 21 55 Z" fill="#ECC0C0"/>
+    <path d="M59 55 V109 H74 C74 109 74 69 59 55 Z" fill="#ECC0C0"/>
     <rect x="6" y="100" width="15" height="9" rx="4" fill="#DCA8A8"/>
     <rect x="59" y="100" width="15" height="9" rx="4" fill="#DCA8A8"/>
-    <ellipse cx="13" cy="112" rx="8" ry="6" fill="#F0856E"/>
-    <ellipse cx="67" cy="112" rx="8" ry="6" fill="#F0856E"/>
-    <rect x="35" y="44" width="10" height="13" fill="#F0856E"/>
-    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
-    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
-    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+    <ellipse cx="13" cy="112" rx="6" ry="8" fill="#F0856E"/>
+    <ellipse cx="67" cy="112" rx="6" ry="8" fill="#F0856E"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="#1C1C1C"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="#F0856E"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="#F0856E"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="#F0856E"/>
+    <path d="M38.52 30.19C45.94 25.85 49.78 18.6 47.09 14C44.4 9.4 36.2 9.19 28.78 13.53C21.35 17.87 17.5 25.11 20.2 29.71C22.9 34.31 31.09 34.52 38.52 30.19Z" fill="#1C1C1C"/>
+    <path d="M47.88 31.14C52.59 33.93 58.06 33.4 60.09 29.97C62.11 26.53 59.93 21.49 55.22 18.71C50.5 15.92 45.03 16.45 43 19.88C40.98 23.32 43.16 28.36 47.88 31.14Z" fill="#1C1C1C"/>
+    <path d="M26.67 39.33C21.17 37.5 19.28 29.22 19 27.67L26.67 31.33V39.33Z" fill="#1C1C1C"/>
+    <path d="M53.33 39.33C58.83 37.5 60.72 29.22 61 27.67L53.33 31.33V39.33Z" fill="#1C1C1C"/>
   </svg>`,
+  /* 5〜10°C: トレンチコート + ブーツ */
   cold: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
     <path d="M18 104 L62 104 L60 145 L42 145 L40 125 L38 125 L20 145 Z" fill="#2D3A2A"/>
     <rect x="18" y="143" width="24" height="20" rx="6" fill="#3E2A1A"/>
@@ -485,20 +505,24 @@ const OUTFIT_SVGS = {
     <circle cx="46" cy="78" r="3" fill="#B4A07A"/>
     <circle cx="34" cy="106" r="3" fill="#B4A07A"/>
     <circle cx="46" cy="106" r="3" fill="#B4A07A"/>
-    <rect x="4" y="52" width="14" height="58" rx="7" fill="#D4C0A8"/>
-    <rect x="62" y="52" width="14" height="58" rx="7" fill="#D4C0A8"/>
+    <path d="M18 52 V110 H4 C4 110 4 67 18 52 Z" fill="#D4C0A8"/>
+    <path d="M62 52 V110 H76 C76 110 76 67 62 52 Z" fill="#D4C0A8"/>
     <rect x="4" y="100" width="14" height="10" rx="5" fill="#C4B090"/>
     <rect x="62" y="100" width="14" height="10" rx="5" fill="#C4B090"/>
-    <ellipse cx="11" cy="113" rx="8" ry="6" fill="#F0856E"/>
-    <ellipse cx="69" cy="113" rx="8" ry="6" fill="#F0856E"/>
-    <rect x="35" y="40" width="10" height="14" fill="#F0856E"/>
-    <path d="M22 40 Q40 50 58 40 L58 54 Q40 62 22 54 Z" fill="#B8CCE0"/>
-    <ellipse cx="40" cy="19" rx="21" ry="19" fill="#1C1C1C"/>
-    <ellipse cx="40" cy="28" rx="17" ry="19" fill="#F0856E"/>
-    <ellipse cx="23" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="57" cy="28" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#D06050"/>
+    <ellipse cx="11" cy="113" rx="6" ry="8" fill="#F0856E"/>
+    <ellipse cx="69" cy="113" rx="6" ry="8" fill="#F0856E"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M22 51 Q40 60 58 51 L58 64 Q40 72 22 64 Z" fill="#B8CCE0"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="#1C1C1C"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="#F0856E"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="#F0856E"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="#F0856E"/>
+    <path d="M38.52 30.19C45.94 25.85 49.78 18.6 47.09 14C44.4 9.4 36.2 9.19 28.78 13.53C21.35 17.87 17.5 25.11 20.2 29.71C22.9 34.31 31.09 34.52 38.52 30.19Z" fill="#1C1C1C"/>
+    <path d="M47.88 31.14C52.59 33.93 58.06 33.4 60.09 29.97C62.11 26.53 59.93 21.49 55.22 18.71C50.5 15.92 45.03 16.45 43 19.88C40.98 23.32 43.16 28.36 47.88 31.14Z" fill="#1C1C1C"/>
+    <path d="M26.67 39.33C21.17 37.5 19.28 29.22 19 27.67L26.67 31.33V39.33Z" fill="#1C1C1C"/>
+    <path d="M53.33 39.33C58.83 37.5 60.72 29.22 61 27.67L53.33 31.33V39.33Z" fill="#1C1C1C"/>
   </svg>`,
+  /* 5°C以下: ダウンコート + ニット帽 + ブーツ */
   very_cold: `<svg viewBox="0 0 80 165" width="80" height="165" xmlns="http://www.w3.org/2000/svg">
     <path d="M16 106 L64 106 L62 146 L43 146 L40 126 L37 126 L18 146 Z" fill="#2D3748"/>
     <rect x="16" y="144" width="26" height="19" rx="6" fill="#4E342E"/>
@@ -511,8 +535,8 @@ const OUTFIT_SVGS = {
     <rect x="13" y="88" width="54" height="9" fill="#7AAEC8"/>
     <rect x="13" y="105" width="54" height="9" fill="#7AAEC8"/>
     <rect x="38" y="54" width="4" height="54" fill="#6898B8"/>
-    <rect x="1" y="54" width="14" height="58" rx="7" fill="#90BED8"/>
-    <rect x="65" y="54" width="14" height="58" rx="7" fill="#90BED8"/>
+    <path d="M15 54 V112 H1 C1 112 1 69 15 54 Z" fill="#90BED8"/>
+    <path d="M65 54 V112 H79 C79 112 79 69 65 54 Z" fill="#90BED8"/>
     <rect x="1" y="64" width="14" height="8" fill="#7AAEC8"/>
     <rect x="1" y="80" width="14" height="8" fill="#7AAEC8"/>
     <rect x="1" y="96" width="14" height="8" fill="#7AAEC8"/>
@@ -521,17 +545,16 @@ const OUTFIT_SVGS = {
     <rect x="65" y="96" width="14" height="8" fill="#7AAEC8"/>
     <rect x="1" y="104" width="14" height="8" rx="4" fill="#6898B8"/>
     <rect x="65" y="104" width="14" height="8" rx="4" fill="#6898B8"/>
-    <ellipse cx="8" cy="115" rx="9" ry="6" fill="#F0856E"/>
-    <ellipse cx="72" cy="115" rx="9" ry="6" fill="#F0856E"/>
-    <path d="M24 42 Q40 50 56 42 L56 56 Q40 64 24 56 Z" fill="#F4B8C4"/>
-    <rect x="35" y="42" width="10" height="14" fill="#F0856E"/>
-    <ellipse cx="40" cy="19" rx="21" ry="16" fill="#1C1C1C"/>
-    <ellipse cx="40" cy="30" rx="17" ry="17" fill="#F0856E"/>
-    <ellipse cx="40" cy="14" rx="21" ry="12" fill="#1C1C1C"/>
-    <rect x="19" y="12" width="42" height="7" rx="2" fill="#2C2C2C"/>
-    <ellipse cx="23" cy="30" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="57" cy="30" rx="3.5" ry="4" fill="#F0856E"/>
-    <ellipse cx="40" cy="38" rx="2.2" ry="2.8" fill="#D06050"/>
+    <ellipse cx="8" cy="115" rx="7" ry="9" fill="#F0856E"/>
+    <ellipse cx="72" cy="115" rx="7" ry="9" fill="#F0856E"/>
+    <path d="M24 51 Q40 60 56 51 L56 64 Q40 72 24 64 Z" fill="#F4B8C4"/>
+    <rect x="35" y="51" width="10" height="10" fill="#F0856E"/>
+    <path d="M40 44.33C51.6 44.33 61 36.72 61 27.33C61 17.94 51.6 10.33 40 10.33C28.4 10.33 19 17.94 19 27.33C19 36.72 28.4 44.33 40 44.33Z" fill="#1C1C1C"/>
+    <path d="M21 37.33C21 46.72 29.51 54.33 40 54.33C50.49 54.33 59 46.72 59 37.33C59 27.94 50.49 20.33 40 20.33C29.51 20.33 21 27.94 21 37.33Z" fill="#F0856E"/>
+    <ellipse cx="40" cy="23" rx="21" ry="12" fill="#1C1C1C"/>
+    <rect x="19" y="20" width="42" height="7" rx="2" fill="#2C2C2C"/>
+    <path d="M49.92 46.68C53.92 49.77 60.18 48.39 63.9 43.58C67.62 38.78 67.38 32.37 63.38 29.28C59.37 26.18 53.11 27.56 49.4 32.37C45.68 37.17 45.91 43.58 49.92 46.68Z" fill="#F0856E"/>
+    <path d="M30.04 46.68C26.04 49.77 19.78 48.39 16.06 43.58C12.35 38.78 12.58 32.37 16.58 29.28C20.59 26.18 26.85 27.56 30.57 32.37C34.28 37.17 34.05 43.58 30.04 46.68Z" fill="#F0856E"/>
   </svg>`,
 };
 
