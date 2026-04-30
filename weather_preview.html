@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天気パターン プレビュー</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #F0F0F0; padding: 24px 16px; }
+  h1 { font-size: 16px; font-weight: 600; color: #2B2E3D; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .card { border-radius: 16px; padding: 20px 20px 16px; display: flex; align-items: flex-start; justify-content: space-between; min-height: 120px; }
+  .card-main { flex: 1; }
+  .card-label { font-size: 11px; font-weight: 600; color: rgba(43,46,61,0.5); letter-spacing: 0.05em; margin-bottom: 6px; }
+  .card-temp { font-size: 56px; font-weight: 800; color: #2B2E3D; line-height: 1; letter-spacing: -2px; }
+  .card-temp span { font-size: 56px; font-weight: 800; }
+  .card-sub { font-size: 12px; color: rgba(43,46,61,0.55); margin-top: 6px; }
+  .card-graphic { flex-shrink: 0; margin-left: 8px; }
+</style>
+</head>
+<body>
+<h1>天気グラフィック・カラー プレビュー</h1>
+<div class="grid" id="grid"></div>
+
+<script>
+const PATTERNS = [
+  { label: '猛暑・快晴',      tempH: 35, tempL: 28, code: 0,  rain: 0,  wind: 10 },
+  { label: '暑い・快晴',      tempH: 27, tempL: 20, code: 0,  rain: 0,  wind: 8  },
+  { label: 'やや暑い・快晴',  tempH: 22, tempL: 15, code: 0,  rain: 0,  wind: 5  },
+  { label: '快適・快晴',      tempH: 17, tempL: 10, code: 0,  rain: 0,  wind: 5  },
+  { label: 'やや寒い・快晴',  tempH: 12, tempL:  6, code: 0,  rain: 0,  wind: 8  },
+  { label: '寒い・快晴',      tempH:  7, tempL:  1, code: 0,  rain: 0,  wind: 10 },
+  { label: '極寒・快晴',      tempH:  2, tempL: -3, code: 0,  rain: 0,  wind: 12 },
+  { label: '薄曇り',          tempH: 20, tempL: 14, code: 2,  rain: 10, wind: 8  },
+  { label: '曇り',            tempH: 17, tempL: 11, code: 3,  rain: 20, wind: 10 },
+  { label: '霧',              tempH: 14, tempL:  9, code: 45, rain: 20, wind: 5  },
+  { label: '小雨',            tempH: 16, tempL: 11, code: 51, rain: 60, wind: 12 },
+  { label: '雨',              tempH: 13, tempL:  8, code: 61, rain: 80, wind: 15 },
+  { label: '大雨',            tempH: 10, tempL:  6, code: 65, rain: 100,wind: 20 },
+  { label: 'にわか雨',        tempH: 18, tempL: 13, code: 80, rain: 70, wind: 18 },
+  { label: '雪',              tempH:  1, tempL: -3, code: 73, rain: 90, wind: 10 },
+  { label: '大雪',            tempH: -1, tempL: -6, code: 75, rain: 100,wind: 15 },
+  { label: '雷雨',            tempH: 24, tempL: 18, code: 95, rain: 90, wind: 30 },
+];
+
+function getWeatherType(day) {
+  const code = day.code || 0;
+  const temp = day.tempH;
+  if ([71,73,75,77,85,86].includes(code)) return 'snow';
+  if ([95,96,99].includes(code)) return 'thunder';
+  if ([51,53,55,61,63,65,80,81,82].includes(code)) return 'rain';
+  if ([3,45,48].includes(code)) return 'cloudy';
+  if ([1,2].includes(code)) return 'partly_cloudy';
+  if (temp >= 30) return 'hot';
+  return 'sunny';
+}
+
+function getTopBgColor(level, weatherType) {
+  if (weatherType === 'snow')          return '#B9DAF4';
+  if (weatherType === 'thunder')       return '#5A7A90';
+  if (weatherType === 'rain')          return '#8293A5';
+  if (weatherType === 'cloudy')        return '#91AFA5';
+  if (weatherType === 'partly_cloudy') return '#91AFA5';
+  if (weatherType === 'hot')           return '#DB6547';
+  const MAP = { warm:'#4DA1BB', comfortable_w:'#4DA1BB', comfortable:'#4DA1BB', cool:'#4DA1BB', cold:'#4DA1BB', very_cold:'#4DA1BB' };
+  return MAP[level] || '#4DA1BB';
+}
+
+function getFeel(temp) {
+  if (temp >= 30) return 'hot';
+  if (temp >= 25) return 'warm';
+  if (temp >= 20) return 'comfortable_w';
+  if (temp >= 15) return 'comfortable';
+  if (temp >= 10) return 'cool';
+  if (temp >= 5)  return 'cold';
+  return 'very_cold';
+}
+
+function getWeatherGraphicSVG(day) {
+  const wType = getWeatherType(day);
+
+  if (wType === 'thunder') return `<svg width="90" height="110" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="44" cy="28" rx="30" ry="18" fill="white" opacity="0.55"/>
+    <ellipse cx="22" cy="42" rx="20" ry="14" fill="white" opacity="0.55"/>
+    <ellipse cx="64" cy="40" rx="24" ry="14" fill="white" opacity="0.55"/>
+    <polygon points="52,54 40,76 50,76 36,100 68,72 56,72 68,54" fill="white" opacity="0.85"/>
+  </svg>`;
+
+  if (wType === 'snow') return `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="22" r="7" fill="#E4F4E9" opacity="0.9"/>
+    <circle cx="54" cy="14" r="5" fill="#E4F4E9" opacity="0.7"/>
+    <circle cx="82" cy="30" r="7" fill="#E4F4E9" opacity="0.9"/>
+    <circle cx="8"  cy="55" r="5" fill="#E4F4E9" opacity="0.65"/>
+    <circle cx="40" cy="52" r="8" fill="#E4F4E9" opacity="0.9"/>
+    <circle cx="70" cy="60" r="5" fill="#E4F4E9" opacity="0.7"/>
+    <circle cx="92" cy="46" r="6" fill="#E4F4E9" opacity="0.85"/>
+    <circle cx="26" cy="80" r="5" fill="#E4F4E9" opacity="0.65"/>
+    <circle cx="62" cy="84" r="7" fill="#E4F4E9" opacity="0.85"/>
+    <circle cx="88" cy="74" r="5" fill="#E4F4E9" opacity="0.7"/>
+  </svg>`;
+
+  if (wType === 'rain') return `<svg width="90" height="110" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#B0B6B5" stroke-width="3" stroke-linecap="round" opacity="0.9">
+      <line x1="18" y1="6"  x2="4"  y2="54"/>
+      <line x1="40" y1="6"  x2="26" y2="54"/>
+      <line x1="62" y1="6"  x2="48" y2="54"/>
+      <line x1="84" y1="6"  x2="70" y2="54"/>
+      <line x1="28" y1="58" x2="14" y2="106"/>
+      <line x1="50" y1="58" x2="36" y2="106"/>
+      <line x1="72" y1="58" x2="58" y2="106"/>
+    </g>
+  </svg>`;
+
+  if (wType === 'cloudy') return `<svg width="110" height="90" viewBox="0 0 110 90" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="55" cy="36" rx="40" ry="24" fill="#E3DADD" opacity="0.55"/>
+    <ellipse cx="26" cy="54" rx="28" ry="18" fill="#E3DADD" opacity="0.6"/>
+    <ellipse cx="82" cy="52" rx="32" ry="18" fill="#E3DADD" opacity="0.6"/>
+    <ellipse cx="55" cy="64" rx="44" ry="18" fill="#E3DADD" opacity="0.5"/>
+  </svg>`;
+
+  if (wType === 'partly_cloudy') return `<svg width="110" height="100" viewBox="0 0 110 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="36" cy="34" r="22" fill="#E3DADD" opacity="0.75"/>
+    <g stroke="#E3DADD" stroke-width="3.5" stroke-linecap="round" opacity="0.5">
+      <line x1="36" y1="4"  x2="36" y2="0"/>
+      <line x1="36" y1="66" x2="36" y2="70"/>
+      <line x1="6"  y1="34" x2="2"  y2="34"/>
+      <line x1="66" y1="34" x2="70" y2="34"/>
+      <line x1="16" y1="14" x2="12" y2="10"/>
+      <line x1="56" y1="14" x2="60" y2="10"/>
+      <line x1="16" y1="54" x2="12" y2="58"/>
+      <line x1="56" y1="54" x2="60" y2="58"/>
+    </g>
+    <ellipse cx="74" cy="70" rx="28" ry="18" fill="#E3DADD" opacity="0.7"/>
+    <ellipse cx="50" cy="78" rx="22" ry="15" fill="#E3DADD" opacity="0.7"/>
+    <ellipse cx="98" cy="76" rx="20" ry="14" fill="#E3DADD" opacity="0.65"/>
+  </svg>`;
+
+  if (wType === 'hot') return `<svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="55" cy="55" r="30" fill="#E6C554" opacity="0.95"/>
+    <g stroke="#E6C554" stroke-width="4.5" stroke-linecap="round" opacity="0.8">
+      <line x1="55" y1="14" x2="55" y2="6"/>
+      <line x1="55" y1="96" x2="55" y2="104"/>
+      <line x1="14" y1="55" x2="6"  y2="55"/>
+      <line x1="96" y1="55" x2="104" y2="55"/>
+      <line x1="26" y1="26" x2="20" y2="20"/>
+      <line x1="84" y1="26" x2="90" y2="20"/>
+      <line x1="26" y1="84" x2="20" y2="90"/>
+      <line x1="84" y1="84" x2="90" y2="90"/>
+    </g>
+  </svg>`;
+
+  return `<svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="55" cy="55" r="42" fill="#E3DADD" opacity="0.7"/>
+  </svg>`;
+}
+
+const grid = document.getElementById('grid');
+PATTERNS.forEach(p => {
+  const wType = getWeatherType(p);
+  const level = getFeel(p.tempH);
+  const bg = getTopBgColor(level, wType);
+  const graphic = getWeatherGraphicSVG(p);
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.background = bg;
+  card.innerHTML = `
+    <div class="card-main">
+      <div class="card-label">${p.label}</div>
+      <div class="card-temp">${p.tempH}<span>°</span></div>
+      <div class="card-sub">降水 ${p.rain}% ・ 風 ${p.wind}km/h</div>
+    </div>
+    <div class="card-graphic">${graphic}</div>
+  `;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>
