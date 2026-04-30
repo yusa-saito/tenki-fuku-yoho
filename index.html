@@ -79,8 +79,11 @@
 
   /* Header */
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-  .header h1 { font-size: 16px; font-weight: 500; color: #2B2E3D; }
-  .header-sub { font-size: 11px; color: rgba(43,46,61,0.6); margin-top: 2px; }
+  .header h1 { font-size: 20px; font-weight: 500; }
+  .header-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+  .app-desc { margin-bottom: 1.25rem; }
+  .app-desc-main { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+  .app-desc-sub { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 2px; }
 
   /* Tabs */
 
@@ -196,6 +199,18 @@
   <!-- 上部エリア（背景色のまま） -->
   <div class="top-section">
 
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>今日なに着る？</h1>
+        <div class="header-sub" id="last-updated"></div>
+      </div>
+    </div>
+    <div class="app-desc">
+      <div class="app-desc-main">天気と気温から、ぴったりの服装を提案します</div>
+      <div class="app-desc-sub">記録を続けるほど、あなたに合った提案になります</div>
+    </div>
+
     <!-- Location bar -->
     <div class="location-bar">
       <div class="loc-tabs">
@@ -288,14 +303,6 @@
         </div>
       </div>
       <div class="current-loc" id="current-loc-label" onclick="toggleLocationBar()">📍 東京都</div>
-    </div>
-
-    <!-- Header -->
-    <div class="header">
-      <div>
-        <h1>今日なに着る？</h1>
-        <div class="header-sub" id="last-updated"></div>
-      </div>
     </div>
 
     <!-- Week grid -->
