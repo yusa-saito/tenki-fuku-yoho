@@ -107,17 +107,6 @@
   /* 天気・服装エリア（カードなし） */
   .weather-outfit-area { padding: 0 0 1.25rem; }
 
-  /* アコーディオン（天気詳細） */
-  .accordion { border-top: 0.5px solid rgba(43,46,61,0.2); margin: 8px 0 12px; }
-  .accordion summary { font-size: 13px; color: rgba(43,46,61,0.65); cursor: pointer; list-style: none; padding: 8px 0; display: flex; align-items: center; justify-content: space-between; user-select: none; }
-  .accordion summary::-webkit-details-marker { display: none; }
-  .accordion-arrow { width: 18px; height: 18px; transition: transform 0.2s; display: inline-flex; flex-shrink: 0; }
-  .accordion[open] .accordion-arrow { transform: rotate(180deg); }
-  .accordion-body { padding-bottom: 6px; }
-  .detail-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid rgba(43,46,61,0.12); font-size: 12px; color: rgba(43,46,61,0.6); }
-  .detail-row:last-child { border-bottom: none; }
-  .detail-row span:last-child { color: #2B2E3D; font-weight: 500; }
-
   .hint-box { background: rgba(255,255,255,0.3); border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #2B2E3D; line-height: 1.6; margin-bottom: 10px; }
   .ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(43,46,61,0.7); background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 10px; margin-bottom: 6px; }
 
@@ -963,12 +952,6 @@ async function selectDay(i) {
       </div>
       <div class="weather-hero-graphic">${getWeatherGraphicSVG(day)}</div>
     </div>
-    <details class="accordion">
-      <summary>天気の詳細 <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="rgba(43,46,61,0.65)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></summary>
-      <div class="accordion-body">
-        ${[['気温（最高）',`${day.tempH}°C`],['気温（最低）',`${day.tempL}°C`],['降水確率',`${day.rain}%`],['最大風速',`${day.windKph}km/h　${day.windKph>=50?'非常に強い':day.windKph>=30?'強い':day.windKph>=15?'やや強い':'穏やか'}`],['天気',day.desc],['体感',feel.label]].map(([k,v])=>`<div class="detail-row"><span>${k}</span><span>${v}</span></div>`).join('')}
-      </div>
-    </details>
     ${hint ? `<div class="ai-badge">✦ パーソナル調整済み</div><div class="hint-box">${hint}</div>` : ''}
     <div class="outfit-body">
       <div class="outfit-model">${svg}</div>
