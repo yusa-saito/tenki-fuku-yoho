@@ -90,6 +90,9 @@
 
   /* Week grid */
   .week-grid-scroll { overflow-x: auto; margin-bottom: 1rem; -webkit-overflow-scrolling: touch; }
+  .week-grid-scroll::-webkit-scrollbar { height: 4px; }
+  .week-grid-scroll::-webkit-scrollbar-track { background: transparent; }
+  .week-grid-scroll::-webkit-scrollbar-thumb { background: rgba(43,46,61,0.2); border-radius: 2px; }
   .week-grid { display: flex; gap: 6px; min-width: max-content; }
   .day-card { background: transparent; border: 0.5px solid rgba(43,46,61,0.15); border-radius: var(--radius-lg); padding: 9px 7px; text-align: center; cursor: pointer; width: 72px; flex-shrink: 0; }
   .day-card:hover { background: rgba(255,255,255,0.15); }
@@ -121,8 +124,8 @@
 
   /* ===== ハーフモーダル ===== */
   .half-modal {
-    background: var(--bg-primary);
-    border-radius: 22px 22px 0 0;
+    background: #E3DADD;
+    border-radius: 0;
     box-shadow: none;
     display: flex;
     flex-direction: column;
@@ -167,10 +170,10 @@
   .ai-badge-dark { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--blue-mid); background: var(--blue-bg); padding: 2px 8px; border-radius: 10px; margin-bottom: 8px; }
 
   /* 大きい気温表示エリア */
-  .weather-hero { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 0.25rem; }
+  .weather-hero { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #2B2E3D; padding-bottom: 6px; margin-bottom: 6px; }
   .weather-hero-main { flex: 1; min-width: 0; }
-  .weather-hero-graphic { flex-shrink: 0; margin-left: 4px; margin-top: -4px; opacity: 0.35; }
-  .temp-display { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; line-height: 1; }
+  .weather-hero-graphic { flex-shrink: 0; margin-left: 4px; margin-top: -4px; }
+  .temp-display { display: flex; align-items: baseline; gap: 6px; line-height: 1; }
   .temp-hero { font-size: 96px; font-weight: 800; color: #2B2E3D; line-height: 1; letter-spacing: -4px; }
   .temp-deg { font-size: 96px; font-weight: 800; vertical-align: baseline; letter-spacing: 0; }
   .temp-low { font-size: 32px; font-weight: 500; color: rgba(43,46,61,0.55); letter-spacing: -1px; }
@@ -293,7 +296,10 @@
     </div>
 
     <!-- Week grid -->
-    <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
+    <div id="illust-anchor" style="position:relative;">
+      <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
+      <div id="weather-illust" style="position:absolute; right:-1rem; top:0; z-index:2; pointer-events:none; display:none; line-height:0;"></div>
+    </div>
 
     <!-- 天気・服装（予報タブのみ、カードなし） -->
     <div id="weather-outfit-wrap" class="weather-outfit-area"></div>
@@ -302,7 +308,6 @@
 
   <!-- ハーフモーダル -->
   <div class="half-modal">
-
     <div class="modal-inner" id="modal-inner"></div>
   </div>
 
@@ -938,8 +943,33 @@ async function selectDay(i) {
   const { items, hint, svg } = getOutfit(day, records);
   const feel = getFeel(day.tempH);
 
-  // 背景色を気温レベルに合わせて動的に変更
-  document.body.style.background = getTopBgColor(feel.level);
+  // 背景色を天気・気温に合わせて動的に変更
+  document.body.style.background = getTopBgColor(feel.level, getWeatherType(day));
+
+  // 天気イラストを表示（カードと31pxだけ重なる位置に配置）
+  const WEATHER_SVG_SHAPES = {
+    sun: `<svg width="170" height="140" viewBox="0 0 170 140" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M127 134C164.003 134 194 104.003 194 67C194 29.9969 164.003 0 127 0C89.9969 0 60 29.9969 60 67C60 104.003 89.9969 134 127 134Z" fill="__COLOR__"/></svg>`,
+  };
+  const WEATHER_ILLUSTS = {
+    hot:           { shape: 'sun', color: '#E6C554' },
+    sunny:         { shape: 'sun', color: '#E3DADD' },
+    partly_cloudy: { shape: 'sun', color: '#E3DADD' },
+    cloudy:        null,
+    rain:          null,
+    snow:          null,
+    thunder:       null,
+  };
+  const illustEl = document.getElementById('weather-illust');
+  const illustConf = WEATHER_ILLUSTS[getWeatherType(day)];
+  if (illustConf) {
+    const gridHeight = document.getElementById('week-grid-wrap').offsetHeight;
+    illustEl.style.top = (gridHeight - 31) + 'px';
+    illustEl.style.display = '';
+    illustEl.innerHTML = WEATHER_SVG_SHAPES[illustConf.shape].replace('__COLOR__', illustConf.color);
+  } else {
+    illustEl.style.display = 'none';
+    illustEl.innerHTML = '';
+  }
 
   // 天気・服装をカードなしで表示
   document.getElementById('weather-outfit-wrap').innerHTML = `
@@ -949,10 +979,9 @@ async function selectDay(i) {
           <span class="temp-hero">${day.tempH}<span class="temp-deg">°</span></span>
           <span class="temp-low">${day.tempL}°</span>
         </div>
-        <div class="weather-sub-row">降水 ${day.rain}% ・ 風 ${day.windKph}km/h</div>
       </div>
-      <div class="weather-hero-graphic">${getWeatherGraphicSVG(day)}</div>
     </div>
+    <div class="weather-sub-row">降水 ${day.rain}% ・ 風 ${day.windKph}km/h</div>
     ${hint ? `<div class="ai-badge">✦ パーソナル調整済み</div><div class="hint-box">${hint}</div>` : ''}
     <div class="outfit-body">
       <div class="outfit-model">${svg}</div>
@@ -1027,7 +1056,6 @@ async function saveRecord() {
   const fb = document.getElementById('save-feedback');
   if (fb) { fb.style.display = 'block'; setTimeout(() => { const el = document.getElementById('save-feedback'); if (el) el.style.display = 'none'; }, 3000); }
 }
-
 
 async function renderHistoryModal() {
   const records = await loadRecords();
@@ -1105,77 +1133,104 @@ async function upsertRecord(record) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.slice(0, 90))); } catch {}
 }
 
-function getTopBgColor(level) {
-  const MAP = { hot:'#F7D5D3', warm:'#E4E2C6', comfortable_w:'#B9DAF4', comfortable:'#B9DAF4', cool:'#97BFCD', cold:'#97BFCD', very_cold:'#B9DAF4' };
-  return MAP[level] || '#B9DAF4';
+function getWeatherType(day) {
+  const code = day.code || 0;
+  const temp = day.tempH;
+  if ([71,73,75,77,85,86].includes(code)) return 'snow';
+  if ([95,96,99].includes(code)) return 'thunder';
+  if ([51,53,55,61,63,65,80,81,82].includes(code)) return 'rain';
+  if ([3,45,48].includes(code)) return 'cloudy';
+  if ([1,2].includes(code)) return 'partly_cloudy';
+  if (temp >= 30) return 'hot';
+  return 'sunny';
+}
+
+function getTopBgColor(level, weatherType) {
+  if (weatherType === 'snow')          return '#B9DAF4';
+  if (weatherType === 'thunder')       return '#5A7A90';
+  if (weatherType === 'rain')          return '#8293A5';
+  if (weatherType === 'cloudy')        return '#91AFA5';
+  if (weatherType === 'partly_cloudy') return '#4DA1BB';
+  if (weatherType === 'hot')           return '#DB6547';
+  const MAP = { warm:'#4DA1BB', comfortable_w:'#4DA1BB', comfortable:'#4DA1BB', cool:'#4DA1BB', cold:'#4DA1BB', very_cold:'#4DA1BB' };
+  return MAP[level] || '#4DA1BB';
 }
 
 function getWeatherGraphicSVG(day) {
-  const code = day.code || 0;
-  const isSnow = [71,73,75,77,85,86].includes(code);
-  const isThunder = [95,96,99].includes(code);
-  const isRain = [51,53,55,61,63,65,80,81,82].includes(code);
-  const isCloudy = code === 3 || code === 45 || code === 48;
-  const isPartlyCloudy = code === 1 || code === 2;
-  const c = '#2B2E3D';
-  const sw = 'stroke-width="3" stroke-linecap="round"';
+  const wType = getWeatherType(day);
 
-  if (isThunder) return `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="38" cy="28" rx="22" ry="14" fill="${c}"/>
-    <ellipse cx="22" cy="36" rx="14" ry="10" fill="${c}"/>
-    <ellipse cx="54" cy="34" rx="16" ry="10" fill="${c}"/>
-    <polygon points="42,44 34,62 40,62 32,78 52,56 44,56 52,44" fill="${c}"/>
+  if (wType === 'thunder') return `<svg width="90" height="110" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="44" cy="28" rx="30" ry="18" fill="white" opacity="0.55"/>
+    <ellipse cx="22" cy="42" rx="20" ry="14" fill="white" opacity="0.55"/>
+    <ellipse cx="64" cy="40" rx="24" ry="14" fill="white" opacity="0.55"/>
+    <polygon points="52,54 40,76 50,76 36,100 68,72 56,72 68,54" fill="white" opacity="0.85"/>
   </svg>`;
 
-  if (isSnow) return `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="40" cy="26" rx="22" ry="14" fill="${c}"/>
-    <ellipse cx="24" cy="34" rx="14" ry="10" fill="${c}"/>
-    <ellipse cx="56" cy="32" rx="16" ry="10" fill="${c}"/>
-    <g stroke="${c}" ${sw}>
-      <line x1="24" y1="52" x2="24" y2="64"/><line x1="18" y1="55" x2="30" y2="61"/><line x1="18" y1="61" x2="30" y2="55"/>
-      <line x1="44" y1="60" x2="44" y2="72"/><line x1="38" y1="63" x2="50" y2="69"/><line x1="38" y1="69" x2="50" y2="63"/>
-      <line x1="62" y1="50" x2="62" y2="62"/><line x1="56" y1="53" x2="68" y2="59"/><line x1="56" y1="59" x2="68" y2="53"/>
+  if (wType === 'snow') return `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="22" r="7" fill="#E4F4E9" opacity="0.9"/>
+    <circle cx="54" cy="14" r="5" fill="#E4F4E9" opacity="0.7"/>
+    <circle cx="82" cy="30" r="7" fill="#E4F4E9" opacity="0.9"/>
+    <circle cx="8"  cy="55" r="5" fill="#E4F4E9" opacity="0.65"/>
+    <circle cx="40" cy="52" r="8" fill="#E4F4E9" opacity="0.9"/>
+    <circle cx="70" cy="60" r="5" fill="#E4F4E9" opacity="0.7"/>
+    <circle cx="92" cy="46" r="6" fill="#E4F4E9" opacity="0.85"/>
+    <circle cx="26" cy="80" r="5" fill="#E4F4E9" opacity="0.65"/>
+    <circle cx="62" cy="84" r="7" fill="#E4F4E9" opacity="0.85"/>
+    <circle cx="88" cy="74" r="5" fill="#E4F4E9" opacity="0.7"/>
+  </svg>`;
+
+  if (wType === 'rain') return `<svg width="90" height="110" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#B0B6B5" stroke-width="3" stroke-linecap="round" opacity="0.9">
+      <line x1="18" y1="6"  x2="4"  y2="54"/>
+      <line x1="40" y1="6"  x2="26" y2="54"/>
+      <line x1="62" y1="6"  x2="48" y2="54"/>
+      <line x1="84" y1="6"  x2="70" y2="54"/>
+      <line x1="28" y1="58" x2="14" y2="106"/>
+      <line x1="50" y1="58" x2="36" y2="106"/>
+      <line x1="72" y1="58" x2="58" y2="106"/>
     </g>
   </svg>`;
 
-  if (isRain) return `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="40" cy="26" rx="22" ry="14" fill="${c}"/>
-    <ellipse cx="24" cy="34" rx="14" ry="10" fill="${c}"/>
-    <ellipse cx="56" cy="32" rx="16" ry="10" fill="${c}"/>
-    <g fill="${c}">
-      <ellipse cx="22" cy="56" rx="2.5" ry="4"/><ellipse cx="36" cy="64" rx="2.5" ry="4"/>
-      <ellipse cx="50" cy="54" rx="2.5" ry="4"/><ellipse cx="62" cy="63" rx="2.5" ry="4"/>
-      <ellipse cx="30" cy="72" rx="2" ry="3.5"/><ellipse cx="56" cy="74" rx="2" ry="3.5"/>
+  if (wType === 'cloudy') return `<svg width="110" height="90" viewBox="0 0 110 90" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="55" cy="36" rx="40" ry="24" fill="#E3DADD" opacity="0.55"/>
+    <ellipse cx="26" cy="54" rx="28" ry="18" fill="#E3DADD" opacity="0.6"/>
+    <ellipse cx="82" cy="52" rx="32" ry="18" fill="#E3DADD" opacity="0.6"/>
+    <ellipse cx="55" cy="64" rx="44" ry="18" fill="#E3DADD" opacity="0.5"/>
+  </svg>`;
+
+  if (wType === 'partly_cloudy') return `<svg width="110" height="100" viewBox="0 0 110 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="36" cy="34" r="22" fill="#E3DADD" opacity="0.75"/>
+    <g stroke="#E3DADD" stroke-width="3.5" stroke-linecap="round" opacity="0.5">
+      <line x1="36" y1="4"  x2="36" y2="0"/>
+      <line x1="36" y1="66" x2="36" y2="70"/>
+      <line x1="6"  y1="34" x2="2"  y2="34"/>
+      <line x1="66" y1="34" x2="70" y2="34"/>
+      <line x1="16" y1="14" x2="12" y2="10"/>
+      <line x1="56" y1="14" x2="60" y2="10"/>
+      <line x1="16" y1="54" x2="12" y2="58"/>
+      <line x1="56" y1="54" x2="60" y2="58"/>
+    </g>
+    <ellipse cx="74" cy="70" rx="28" ry="18" fill="#E3DADD" opacity="0.7"/>
+    <ellipse cx="50" cy="78" rx="22" ry="15" fill="#E3DADD" opacity="0.7"/>
+    <ellipse cx="98" cy="76" rx="20" ry="14" fill="#E3DADD" opacity="0.65"/>
+  </svg>`;
+
+  if (wType === 'hot') return `<svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="55" cy="55" r="30" fill="#E6C554" opacity="0.95"/>
+    <g stroke="#E6C554" stroke-width="4.5" stroke-linecap="round" opacity="0.8">
+      <line x1="55" y1="14" x2="55" y2="6"/>
+      <line x1="55" y1="96" x2="55" y2="104"/>
+      <line x1="14" y1="55" x2="6"  y2="55"/>
+      <line x1="96" y1="55" x2="104" y2="55"/>
+      <line x1="26" y1="26" x2="20" y2="20"/>
+      <line x1="84" y1="26" x2="90" y2="20"/>
+      <line x1="26" y1="84" x2="20" y2="90"/>
+      <line x1="84" y1="84" x2="90" y2="90"/>
     </g>
   </svg>`;
 
-  if (isCloudy) return `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="38" cy="32" rx="26" ry="18" fill="${c}"/>
-    <ellipse cx="20" cy="44" rx="18" ry="13" fill="${c}"/>
-    <ellipse cx="58" cy="42" rx="20" ry="13" fill="${c}"/>
-  </svg>`;
-
-  if (isPartlyCloudy) return `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="30" cy="28" r="14" fill="${c}"/>
-    <g stroke="${c}" ${sw}>
-      <line x1="30" y1="6" x2="30" y2="2"/><line x1="30" y1="50" x2="30" y2="54"/>
-      <line x1="8" y1="28" x2="4" y2="28"/><line x1="52" y1="28" x2="56" y2="28"/>
-      <line x1="14" y1="14" x2="11" y2="11"/><line x1="46" y1="14" x2="49" y2="11"/>
-      <line x1="14" y1="42" x2="11" y2="45"/><line x1="46" y1="42" x2="49" y2="45"/>
-    </g>
-    <ellipse cx="54" cy="52" rx="22" ry="14" fill="${c}"/>
-    <ellipse cx="36" cy="58" rx="16" ry="11" fill="${c}"/>
-    <ellipse cx="70" cy="56" rx="14" ry="10" fill="${c}"/>
-  </svg>`;
-
-  return `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="40" cy="40" r="18" fill="${c}"/>
-    <g stroke="${c}" ${sw}>
-      <line x1="40" y1="10" x2="40" y2="4"/><line x1="40" y1="70" x2="40" y2="76"/>
-      <line x1="10" y1="40" x2="4" y2="40"/><line x1="70" y1="40" x2="76" y2="40"/>
-      <line x1="18" y1="18" x2="14" y2="14"/><line x1="62" y1="18" x2="66" y2="14"/>
-      <line x1="18" y1="62" x2="14" y2="66"/><line x1="62" y1="62" x2="66" y2="66"/>
-    </g>
+  return `<svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="55" cy="55" r="42" fill="#E3DADD" opacity="0.7"/>
   </svg>`;
 }
 
