@@ -48,17 +48,17 @@
   .top-section { padding: 1rem 1rem 0; flex-shrink: 0; }
 
   /* Location bar */
-  .location-bar { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 1.25rem; }
+  .location-bar { border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 1.25rem; }
   .loc-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
   .loc-tab { padding: 5px 14px; border-radius: 20px; border: 0.5px solid var(--border); background: transparent; font-size: 13px; color: var(--text-secondary); cursor: pointer; font-family: inherit; transition: all 0.15s; }
   .loc-tab.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
   .loc-panel { display: none; }
   .loc-panel.active { display: block; }
-  .loc-select { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 8px 10px; font-size: 16px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+  .loc-select { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 8px 10px; font-size: 16px; background: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; color: var(--text-primary); font-family: inherit; appearance: none; }
   .loc-select:focus { outline: none; border-color: var(--border-hover); }
   .location-row { display: flex; align-items: center; gap: 8px; }
   .search-wrap { position: relative; flex: 1; }
-  .loc-search { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 8px 10px; font-size: 16px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; }
+  .loc-search { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 8px 10px; font-size: 16px; background: transparent; color: var(--text-primary); font-family: inherit; }
   .loc-search:focus { outline: none; border-color: var(--border-hover); }
   .search-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); z-index: 100; max-height: 240px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
   .suggestion-item { padding: 10px 12px; cursor: pointer; border-bottom: 0.5px solid var(--border); }
@@ -74,6 +74,7 @@
   .location-bar.collapsed .loc-tabs,
   .location-bar.collapsed .loc-panel,
   .location-bar.collapsed .loc-panel.active { display: none; }
+  .location-bar.collapsed { border-radius: 999px; }
   .location-bar.collapsed .current-loc { margin-top: 0; }
   .location-bar.collapsed .current-loc::after { transform: rotate(-90deg); }
 
@@ -134,7 +135,7 @@
   .half-modal {
     background: var(--bg-primary);
     border-radius: 22px 22px 0 0;
-    box-shadow: 0 -6px 24px rgba(0,0,0,0.15);
+    box-shadow: none;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -145,7 +146,7 @@
   .modal-inner { padding: 0 1rem 2rem; overflow-y: auto; flex: 1; }
 
   /* Record */
-  .record-section-title { font-size: 15px; font-weight: 500; color: var(--text-primary); padding: 12px 0 10px; border-bottom: 0.5px solid var(--border); margin-bottom: 12px; }
+  .record-section-title { font-size: 15px; font-weight: 500; color: var(--text-primary); padding: 12px 0 10px; margin-bottom: 12px; }
   .feel-selector { display: flex; gap: 6px; margin-bottom: 12px; }
   .feel-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 2px; border-radius: 8px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; font-family: inherit; transition: all 0.12s; min-width: 0; }
   .feel-btn-icon { font-size: 18px; line-height: 1; }
@@ -315,7 +316,6 @@
 
   <!-- ハーフモーダル -->
   <div class="half-modal">
-    <div class="modal-handle-area"><div class="modal-handle"></div></div>
     <div class="modal-inner" id="modal-inner"></div>
   </div>
 
