@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<title>週間天気 &amp; 服装プランナー</title>
+<title>今日なに着る？</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,9 +83,7 @@
   .header-sub { font-size: 11px; color: rgba(43,46,61,0.6); margin-top: 2px; }
 
   /* Tabs */
-  .tab-bar { display: flex; gap: 6px; margin-bottom: 1rem; }
-  .tab { padding: 6px 16px; border-radius: 20px; border: 0.5px solid rgba(43,46,61,0.3); font-size: 13px; cursor: pointer; background: transparent; color: rgba(43,46,61,0.7); font-family: inherit; }
-  .tab.active { background: #2B2E3D; color: #fff; border-color: #2B2E3D; }
+
 
   /* Week grid */
   .week-grid-scroll { overflow-x: auto; margin-bottom: 1rem; -webkit-overflow-scrolling: touch; }
@@ -295,18 +293,12 @@
     <!-- Header -->
     <div class="header">
       <div>
-        <h1>☁ 週間天気 &amp; 服装プランナー</h1>
+        <h1>今日なに着る？</h1>
         <div class="header-sub" id="last-updated"></div>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="tab-bar">
-      <button class="tab active" onclick="switchTab('forecast')">予報</button>
-      <button class="tab" onclick="switchTab('history')">記録履歴</button>
-    </div>
-
-    <!-- Week grid（予報タブのみ） -->
+    <!-- Week grid -->
     <div id="week-grid-wrap"><div class="loading-msg"><span class="spinner"></span>天気を取得中...</div></div>
 
     <!-- 天気・服装（予報タブのみ、カードなし） -->
@@ -427,7 +419,6 @@ let selectedDay = 0;
 let selectedFeel = null;
 let selectedTags = new Set();
 let currentLat = 35.6895, currentLon = 139.6917, currentName = '東京都 東京';
-let currentTab = 'forecast';
 
 let searchTimer = null;
 
@@ -1050,20 +1041,6 @@ async function saveRecord() {
   if (fb) { fb.style.display = 'block'; setTimeout(() => { const el = document.getElementById('save-feedback'); if (el) el.style.display = 'none'; }, 3000); }
 }
 
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  if (tab === 'forecast') {
-    document.getElementById('week-grid-wrap').style.display = '';
-    document.getElementById('weather-outfit-wrap').style.display = '';
-    selectDay(selectedDay);
-  } else {
-    document.getElementById('week-grid-wrap').style.display = 'none';
-    document.getElementById('weather-outfit-wrap').style.display = 'none';
-    renderHistoryModal();
-  }
-}
 
 async function renderHistoryModal() {
   const records = await loadRecords();
